@@ -178,8 +178,9 @@ The insurance verification dashboard is the only feature that no competitor curr
 
 ```bash
 npm install
-npm run dev      # local prototype
+npm run dev      # local prototype → http://localhost:5173
 npm run build    # must pass before any commit
+git push         # triggers Vercel auto-deploy to https://accuworld.vercel.app
 ```
 
 ---
@@ -199,8 +200,9 @@ A slice is complete only when:
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
-**Production:** https://accuworld.vercel.app (Vercel, project: sujithkumar-menons-projects/accuworld)
-To redeploy: `vercel --prod --yes` from the project root.
+**Production:** https://accuworld.vercel.app (Vercel project: `prj_hMbcqaGsegGqIxS7oeJznJpN90YF`)
+**GitHub:** https://github.com/smenon2710/accuworld (branch: `main`)
+**CI/CD:** Push to `main` → Vercel auto-builds and deploys. No manual deploy step needed.
 
 ### Completed slices
 
