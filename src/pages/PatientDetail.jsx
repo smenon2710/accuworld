@@ -5,6 +5,7 @@ import {
   Edit2, AlertCircle, Clock, Archive, RotateCcw,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { useApp } from '@/context/AppContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -17,6 +18,20 @@ import EditPatientDialog from '@/components/patients/EditPatientDialog'
 function formatDate(d) {
   if (!d) return '—'
   try { return format(parseISO(d), 'MMM d, yyyy') } catch { return d }
+}
+
+function estPatientOwes(ins) {
+  if (!ins) return null
+  if (ins.coverageStatus === COVERAGE_STATUS.COVERED) {
+    if (ins.deductibleMet) return `$${ins.copay}/visit`
+    return ins.copay > 0
+      ? `$${ins.copay} copay · deductible not yet met`
+      : 'Deductible not yet met — higher out-of-pocket expected'
+  }
+  if (ins.coverageStatus === COVERAGE_STATUS.SELF_PAY || ins.coverageStatus === COVERAGE_STATUS.NOT_COVERED) {
+    return `$${SELF_PAY_RATE}/visit`
+  }
+  return 'Verify to calculate'
 }
 
 function appointmentTypeLabel(type) {
@@ -60,6 +75,10 @@ export default function PatientDetail() {
     .filter((v) => v.patientId === id)
     .sort((a, b) => new Date(b.date) - new Date(a.date))
   const plan = treatmentPlans.find((tp) => tp.patientId === id)
+
+  const painChartData = [...patientVisits]
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .map((v) => ({ date: format(parseISO(v.date), 'MMM d'), pain: v.painLevel }))
 
   const upcoming = patientAppointments.filter(
     (a) => [APPOINTMENT_STATUS.CONFIRMED, APPOINTMENT_STATUS.REQUESTED].includes(a.status)
@@ -209,6 +228,12 @@ export default function PatientDetail() {
                           <p className="text-xs text-muted-foreground">Deductible Met</p>
                           <p className="font-medium">{ins.deductibleMet ? 'Yes' : 'No'}</p>
                         </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Est. Patient Owes</p>
+                          <p className={`font-medium ${!ins.deductibleMet ? 'text-amber-700' : 'text-teal-700'}`}>
+                            {estPatientOwes(ins)}
+                          </p>
+                        </div>
                         {ins.authReferenceNumber && (
                           <div>
                             <p className="text-xs text-muted-foreground">Auth Reference</p>
@@ -217,13 +242,19 @@ export default function PatientDetail() {
                         )}
                       </>
                     )}
-                    {ins.coverageStatus === COVERAGE_STATUS.SELF_PAY ||
-                    ins.coverageStatus === COVERAGE_STATUS.NOT_COVERED ? (
+                    {(ins.coverageStatus === COVERAGE_STATUS.SELF_PAY ||
+                      ins.coverageStatus === COVERAGE_STATUS.NOT_COVERED) && (
                       <div>
-                        <p className="text-xs text-muted-foreground">Self-Pay Rate</p>
-                        <p className="font-medium">${SELF_PAY_RATE}/visit</p>
+                        <p className="text-xs text-muted-foreground">Est. Patient Owes</p>
+                        <p className="font-medium text-teal-700">${SELF_PAY_RATE}/visit</p>
                       </div>
-                    ) : null}
+                    )}
+                    {ins.coverageStatus === COVERAGE_STATUS.UNVERIFIED && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Est. Patient Owes</p>
+                        <p className="font-medium text-zinc-400">Verify to calculate</p>
+                      </div>
+                    )}
                     {ins.lastVerifiedDate && (
                       <div>
                         <p className="text-xs text-muted-foreground">Last Verified</p>
@@ -288,6 +319,37 @@ export default function PatientDetail() {
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pain Trend */}
+          {painChartData.length >= 2 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Pain Trend</CardTitle>
+                <p className="text-xs text-muted-foreground">Self-reported pain level (1–10) across visits</p>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={160}>
+                  <LineChart data={painChartData} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                    <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: '#94a3b8' }} ticks={[0, 2, 4, 6, 8, 10]} />
+                    <Tooltip
+                      contentStyle={{ fontSize: 12, borderRadius: 6, border: '1px solid #e2e8f0' }}
+                      formatter={(v) => [`${v}/10`, 'Pain']}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="pain"
+                      stroke="#0d9488"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: '#0d9488', strokeWidth: 0 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           )}

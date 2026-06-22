@@ -14,6 +14,16 @@ TCM charting (pulse, tongue, meridians, points) is required and expected — Jan
 
 Price is a supporting argument against Jane App and Unified Practice only. Carepatron is free — do not lead with price against it. Lead with TCM-specificity and the insurance workflow.
 
+### Also evaluated (apps the prospect tried before acupuncture-specific tools)
+
+| App | Primary focus | What they offer | What they lack for acupuncture |
+|-----|--------------|-----------------|-------------------------------|
+| **WebPT** | Physical therapy EMR | Outcomes tracking (200+ standardized measures), online patient self-scheduling, no-show alerts, 50+ productivity reports, voice-to-text charting | No TCM templates, no acupuncture-specific billing codes, PT-only workflows |
+| **CollaborateMD** | Medical billing / RCM | Real-time insurance eligibility check (seconds), automated appointment reminders (SMS/email/phone), 125+ reporting dashboards, patient responsibility estimates, built-in clearinghouse | No clinical charting, no TCM support, billing-only tool |
+| **DrChrono** | Multi-specialty EHR | Customizable note templates (acupuncture-aware), body diagram free-draw for needle placement, speech-to-text dictation, iPad-first mobile app, insurance eligibility verification | Generic templates need heavy customization, no dashboard-level insurance flags, patient portal adds complexity the solo practitioner doesn't need |
+
+**Positioning note:** The prospect abandoned all three because none were built for acupuncture workflows. WebPT and CollaborateMD have no TCM charting at all. DrChrono supports acupuncture but its insurance verification is buried in the billing module — same weakness as Jane App. AccuWorld's insurance dashboard is still the wedge.
+
 This is a demo prototype, not production. No real patient data. No real integrations. No real auth.
 
 ---
@@ -148,6 +158,9 @@ Most features in PRD.md also exist in competing products. That's fine — you ne
 | Feature | Status | Implication |
 |---|---|---|
 | Insurance Benefits Tracker + Dashboard flags | **Unique** | Build deep, polish hard |
+| Simulated real-time eligibility check | **Unique angle** (competitors hide it) | Fake spinner → result on the insurance cockpit; no real API needed |
+| Pain level trend chart per patient | **Differentiator add** (WebPT has outcomes tracking; AccuWorld doesn't) | recharts LineChart in PatientDetail — data already exists in visits |
+| Expected patient responsibility on schedule | **Differentiator add** (CollaborateMD has this; AccuWorld doesn't surface it) | Derive from copay + deductibleMet already in seed |
 | Text/phone booking inbox | **Unique angle** | Build it; don't over-engineer it |
 | Patient management, scheduling, TCM charting, treatment plans, billing, follow-up | **Commodity** | Build correctly and quickly; no gold-plating |
 
@@ -196,7 +209,7 @@ A slice is complete only when:
 
 ---
 
-## Build Status (updated 2026-06-21)
+## Build Status (updated 2026-06-22 — slice 9 in progress)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -216,7 +229,7 @@ A slice is complete only when:
 | 6 | Visit/Chart — TCM note form, point badge autocomplete, Suggest Points, SOAP scaffold | ✅ Done |
 | 7 | Treatment Plans — create/edit, progress bar vs completed visits | ✅ Done |
 | 8 | Billing — invoice list, mark-paid, superbill print view, new invoice with CPT defaults | ✅ Done |
-| 9 | Polish pass | ⏳ Pending |
+| 9 | Polish pass — competitor gap features (eligibility check, pain trend, est. owes) | ⏳ In Progress |
 
 ### Known gaps (to address in slice 9)
 
@@ -228,6 +241,9 @@ A slice is complete only when:
 | Vercel deployment config | Root | ✅ Done — `vercel.json` added, deployed to https://accuworld.vercel.app |
 | Demo walkthrough end-to-end test | All | PRD Section 14 flow: New Patient → Schedule → Complete → Chart → Treatment Plan → Superbill |
 | Console warnings audit | All | ✅ Fixed — removed unused imports (useEffect, insMap, insuranceProfiles, visits) in Visits/Schedule/Billing |
+| **Simulated eligibility check** | Insurance cockpit | ✅ Done — "Check Eligibility" button per row. 1.2s spinner → inline result (teal/red/grey). Logic in `Insurance.jsx:mockEligibilityResult()`. |
+| **Pain level trend chart** | PatientDetail | ✅ Done — recharts `LineChart` in `PatientDetail.jsx`, shown when patient has ≥2 visits. Historical seed visits added for p1 (v8–v11) and p2 (v12–v14). |
+| **Expected patient responsibility** | PatientDetail | ✅ Done — "Est. Patient Owes" field in insurance card. Logic in `PatientDetail.jsx:estPatientOwes()`. Amber for deductible-pending, teal for confirmed, grey for unverified. |
 
 ### Prototype-specific decisions logged here
 
@@ -235,3 +251,7 @@ A slice is complete only when:
 - **State persists to localStorage** automatically; "Reset Data" button in demo banner restores seed state.
 - **No month view** — calendar shows Day and Week. Sufficient for the demo; month view is post-polish if needed.
 - **Visit decrement on chart save** — safer for demo than on appointment complete, as it requires the practitioner to actually open and save the chart.
+- **Eligibility check is fully simulated** — `mockEligibilityResult()` in `Insurance.jsx` derives its response from the existing seed insurance profile (coverage status, visits remaining, copay). No real API call. The 1.2s delay is intentional to make the interaction feel authentic.
+- **Pain Trend chart threshold is ≥2 visits** — chart is hidden for patients with only one visit (Sandra Kim, Robert Mitchell, Patricia Lane, Angela Washington) rather than showing a meaningless single-point graph.
+- **Historical seed visits added** — v8–v11 for Maria Rodriguez (Jan–May 2026, pain 8→5) and v12–v14 for James Thompson (Dec 2025–Mar 2026, pain 8→5) to populate the pain trend chart. `visitsUsed` in their insurance profiles was not changed — seed visit count and insurance counters are intentionally decoupled in the prototype.
+- **Est. Patient Owes logic** — deductible-met patients show copay only; deductible-pending adds a note ("$30 copay · deductible not yet met"); self-pay and not-covered show $80/visit; unverified shows "Verify to calculate".

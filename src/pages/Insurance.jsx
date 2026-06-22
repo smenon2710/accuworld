@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertCircle, Clock, ShieldCheck, Filter } from 'lucide-react'
+import { AlertCircle, Clock, ShieldCheck, Filter, Loader2, CheckCircle2, XCircle, HelpCircle } from 'lucide-react'
 import { format, parseISO, isPast } from 'date-fns'
 import { useApp } from '@/context/AppContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import InsuranceBadge from '@/components/patients/InsuranceBadge'
 import MarkVerifiedDialog from '@/components/insurance/MarkVerifiedDialog'
-import { COVERAGE_STATUS } from '@/data/seed'
+import { COVERAGE_STATUS, SELF_PAY_RATE } from '@/data/seed'
 
 function formatDate(d) {
   if (!d) return '—'
@@ -40,11 +40,39 @@ const STATUS_FILTERS = [
   { value: COVERAGE_STATUS.SELF_PAY, label: 'Self-Pay' },
 ]
 
+function mockEligibilityResult(ins) {
+  const remaining = ins.visitsAuthorized - ins.visitsUsed
+  if (ins.coverageStatus === COVERAGE_STATUS.COVERED) {
+    return {
+      ok: true,
+      message: `Active · ${remaining} visit${remaining === 1 ? '' : 's'} remaining · $${ins.copay} copay`,
+    }
+  }
+  if (ins.coverageStatus === COVERAGE_STATUS.NOT_COVERED) {
+    return { ok: false, message: 'Policy active — acupuncture not covered under this plan' }
+  }
+  if (ins.coverageStatus === COVERAGE_STATUS.SELF_PAY) {
+    return { ok: null, message: `Self-pay patient — $${SELF_PAY_RATE}/visit` }
+  }
+  // UNVERIFIED — simulate a real payer response: policy found but benefit unconfirmed
+  return { ok: null, message: `Policy found with ${ins.payer} — call to confirm acupuncture benefit` }
+}
+
 export default function Insurance() {
   const { patients, insuranceProfiles } = useApp()
   const [flagFilter, setFlagFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [verifyTarget, setVerifyTarget] = useState(null)
+  const [checkingId, setCheckingId] = useState(null)
+  const [eligibilityResults, setEligibilityResults] = useState({})
+
+  function checkEligibility(ins) {
+    setCheckingId(ins.id)
+    setTimeout(() => {
+      setEligibilityResults((prev) => ({ ...prev, [ins.id]: mockEligibilityResult(ins) }))
+      setCheckingId(null)
+    }, 1200)
+  }
 
   const rows = insuranceProfiles.map((ins) => {
     const patient = patients.find((p) => p.id === ins.patientId)
@@ -151,7 +179,7 @@ export default function Insurance() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Copay</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Re-verify By</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Flags</th>
-                <th className="px-4 py-3" />
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -206,13 +234,41 @@ export default function Insurance() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <Button
-                      size="sm"
-                      variant={flags.length > 0 ? 'default' : 'outline'}
-                      onClick={() => setVerifyTarget({ patientId: ins.patientId, ins, patient })}
-                    >
-                      {ins.coverageStatus === COVERAGE_STATUS.UNVERIFIED ? 'Verify' : 'Update'}
-                    </Button>
+                    <div className="flex flex-col items-start gap-1.5">
+                      <div className="flex flex-wrap gap-1.5">
+                        <Button
+                          size="sm"
+                          variant={flags.length > 0 ? 'default' : 'outline'}
+                          onClick={() => setVerifyTarget({ patientId: ins.patientId, ins, patient })}
+                        >
+                          {ins.coverageStatus === COVERAGE_STATUS.UNVERIFIED ? 'Verify' : 'Update'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={checkingId === ins.id}
+                          onClick={() => checkEligibility(ins)}
+                        >
+                          {checkingId === ins.id ? (
+                            <><Loader2 className="h-3 w-3 animate-spin mr-1" />Checking…</>
+                          ) : 'Check Eligibility'}
+                        </Button>
+                      </div>
+                      {eligibilityResults[ins.id] && (
+                        <div className={`flex items-center gap-1 text-xs ${
+                          eligibilityResults[ins.id].ok === true
+                            ? 'text-teal-700'
+                            : eligibilityResults[ins.id].ok === false
+                            ? 'text-red-600'
+                            : 'text-zinc-500'
+                        }`}>
+                          {eligibilityResults[ins.id].ok === true && <CheckCircle2 className="h-3 w-3 shrink-0" />}
+                          {eligibilityResults[ins.id].ok === false && <XCircle className="h-3 w-3 shrink-0" />}
+                          {eligibilityResults[ins.id].ok === null && <HelpCircle className="h-3 w-3 shrink-0" />}
+                          {eligibilityResults[ins.id].message}
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
