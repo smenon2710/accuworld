@@ -7,6 +7,7 @@ import {
   FileText,
   ClipboardList,
   Receipt,
+  HelpCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -20,7 +21,7 @@ const navItems = [
   { to: '/billing', label: 'Billing', icon: Receipt },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ onHelpOpen }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-40 flex w-56 flex-col border-r bg-white">
       {/* Logo */}
@@ -52,6 +53,15 @@ export default function Sidebar() {
           ))}
         </ul>
       </nav>
+
+      {/* Help */}
+      <button
+        onClick={onHelpOpen}
+        className="flex w-full items-center gap-2.5 border-t px-5 py-3 text-xs text-muted-foreground transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+      >
+        <HelpCircle className="h-4 w-4 shrink-0" />
+        Help &amp; Demo Guide
+      </button>
 
       {/* Practitioner */}
       <div className="border-t px-5 py-3">

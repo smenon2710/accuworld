@@ -5,8 +5,8 @@ import {
   MessageSquare, Phone, User,
 } from 'lucide-react'
 import {
-  format, addDays, subDays, startOfWeek, endOfWeek, eachDayOfInterval,
-  isSameDay, addMinutes, parseISO,
+  format, addDays, startOfWeek, endOfWeek, eachDayOfInterval,
+  isSameDay, parseISO, addMonths, startOfMonth, endOfMonth,
 } from 'date-fns'
 import { useApp } from '@/context/AppContext'
 import { Button } from '@/components/ui/button'
@@ -35,6 +35,90 @@ const STATUS_COLOR = {
 }
 
 const HOURS = Array.from({ length: 10 }, (_, i) => i + 9) // 9am–6pm
+const MONTH_DAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+function MonthGrid({ currentDate, appointments, patientMap, onDayClick, onApptClick }) {
+  const monthStart = startOfMonth(currentDate)
+  const monthEnd = endOfMonth(currentDate)
+  const calStart = startOfWeek(monthStart, { weekStartsOn: 1 })
+  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
+  const calDays = eachDayOfInterval({ start: calStart, end: calEnd })
+
+  const apptsByDate = {}
+  appointments.forEach((a) => {
+    const key = format(new Date(a.datetime), 'yyyy-MM-dd')
+    if (!apptsByDate[key]) apptsByDate[key] = []
+    apptsByDate[key].push(a)
+  })
+
+  const weeks = []
+  for (let i = 0; i < calDays.length; i += 7) weeks.push(calDays.slice(i, i + 7))
+
+  return (
+    <div className="rounded-lg border bg-white overflow-hidden">
+      {/* Day-of-week headers */}
+      <div className="grid grid-cols-7 border-b bg-zinc-50/60">
+        {MONTH_DAY_HEADERS.map((d) => (
+          <div key={d} className="py-2 text-center text-xs font-medium text-muted-foreground">{d}</div>
+        ))}
+      </div>
+      {/* Weeks */}
+      {weeks.map((week, wi) => (
+        <div key={wi} className="grid grid-cols-7 border-b last:border-0">
+          {week.map((day) => {
+            const key = format(day, 'yyyy-MM-dd')
+            const dayAppts = (apptsByDate[key] || []).filter(
+              (a) => a.status !== 'cancelled'
+            )
+            const isToday = isSameDay(day, TODAY)
+            const isCurrentMonth = format(day, 'yyyy-MM') === format(currentDate, 'yyyy-MM')
+            const shown = dayAppts.slice(0, 2)
+            const overflow = dayAppts.length - shown.length
+
+            return (
+              <div
+                key={key}
+                className={`min-h-[5.5rem] cursor-pointer border-r p-1.5 last:border-0 transition-colors hover:bg-zinc-50/80 ${
+                  !isCurrentMonth ? 'bg-zinc-50/40' : ''
+                }`}
+                onClick={() => onDayClick(day)}
+              >
+                <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
+                  isToday
+                    ? 'bg-teal-600 text-white'
+                    : isCurrentMonth
+                    ? 'text-zinc-800'
+                    : 'text-zinc-400'
+                }`}>
+                  {format(day, 'd')}
+                </span>
+                <div className="mt-1 space-y-0.5">
+                  {shown.map((a) => {
+                    const patient = patientMap[a.patientId]
+                    return (
+                      <div
+                        key={a.id}
+                        className={`${STATUS_COLOR[a.status] ?? 'bg-zinc-400'} rounded px-1 py-0.5 text-white`}
+                        onClick={(e) => { e.stopPropagation(); onApptClick(a.patientId) }}
+                      >
+                        <p className="truncate text-xs leading-tight">
+                          {patient ? `${patient.firstName} ${patient.lastName[0]}.` : '?'}
+                        </p>
+                      </div>
+                    )
+                  })}
+                  {overflow > 0 && (
+                    <p className="pl-0.5 text-xs text-muted-foreground">+{overflow} more</p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function Schedule() {
   const { patients, appointments, updateAppointment } = useApp()
@@ -63,6 +147,19 @@ export default function Schedule() {
   }
   function navigate_day(dir) {
     setCurrentDate((d) => addDays(d, dir))
+  }
+  function navigate_month(dir) {
+    setCurrentDate((d) => addMonths(d, dir))
+  }
+  function navigatePrev() {
+    if (view === 'day') navigate_day(-1)
+    else if (view === 'month') navigate_month(-1)
+    else navigate_week(-1)
+  }
+  function navigateNext() {
+    if (view === 'day') navigate_day(1)
+    else if (view === 'month') navigate_month(1)
+    else navigate_week(1)
   }
 
   function handleComplete(apptId) {
@@ -102,12 +199,14 @@ export default function Schedule() {
           <p className="text-sm text-muted-foreground">
             {view === 'day'
               ? format(currentDate, 'EEEE, MMMM d, yyyy')
+              : view === 'month'
+              ? format(currentDate, 'MMMM yyyy')
               : `${format(weekStart, 'MMM d')} – ${format(weekEnd, 'MMM d, yyyy')}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex gap-1 rounded-lg border p-1">
-            {['week', 'day'].map((v) => (
+            {['month', 'week', 'day'].map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -120,19 +219,11 @@ export default function Schedule() {
             ))}
           </div>
           <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => (view === 'day' ? navigate_day(-1) : navigate_week(-1))}
-            >
+            <Button variant="outline" size="icon" onClick={navigatePrev}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="sm" onClick={() => setCurrentDate(TODAY)}>Today</Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => (view === 'day' ? navigate_day(1) : navigate_week(1))}
-            >
+            <Button variant="outline" size="icon" onClick={navigateNext}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -146,73 +237,77 @@ export default function Schedule() {
       <div className="grid grid-cols-3 gap-5">
         {/* Calendar grid */}
         <div className="col-span-2">
-          <div className="rounded-lg border bg-white overflow-hidden">
-            {/* Day headers */}
-            <div className={`grid border-b bg-zinc-50/60`} style={{ gridTemplateColumns: `4rem repeat(${daysToShow.length}, 1fr)` }}>
-              <div className="h-10" />
-              {daysToShow.map((day) => (
-                <div
-                  key={day.toISOString()}
-                  className={`flex flex-col items-center justify-center py-2 text-xs font-medium ${
-                    isSameDay(day, TODAY) ? 'text-teal-700' : 'text-muted-foreground'
-                  }`}
-                >
-                  <span className="uppercase">{format(day, 'EEE')}</span>
-                  <span className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-sm ${
-                    isSameDay(day, TODAY) ? 'bg-teal-600 text-white font-semibold' : ''
-                  }`}>
-                    {format(day, 'd')}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {/* Hour rows */}
-            <div className="overflow-y-auto" style={{ maxHeight: '60vh' }}>
-              {HOURS.map((hour) => (
-                <div
-                  key={hour}
-                  className="grid border-b last:border-0"
-                  style={{ gridTemplateColumns: `4rem repeat(${daysToShow.length}, 1fr)`, minHeight: '4rem' }}
-                >
-                  <div className="flex items-start justify-end pr-3 pt-1 text-xs text-muted-foreground">
-                    {format(new Date().setHours(hour, 0, 0), 'h a')}
+          {view === 'month' ? (
+            <MonthGrid
+              currentDate={currentDate}
+              appointments={appointments}
+              patientMap={patientMap}
+              onDayClick={(day) => { setCurrentDate(day); setView('day') }}
+              onApptClick={(patientId) => navigate(`/patients/${patientId}`)}
+            />
+          ) : (
+            <div className="rounded-lg border bg-white overflow-hidden">
+              {/* Day headers */}
+              <div className="grid border-b bg-zinc-50/60" style={{ gridTemplateColumns: `4rem repeat(${daysToShow.length}, 1fr)` }}>
+                <div className="h-10" />
+                {daysToShow.map((day) => (
+                  <div
+                    key={day.toISOString()}
+                    className={`flex flex-col items-center justify-center py-2 text-xs font-medium ${
+                      isSameDay(day, TODAY) ? 'text-teal-700' : 'text-muted-foreground'
+                    }`}
+                  >
+                    <span className="uppercase">{format(day, 'EEE')}</span>
+                    <span className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-sm ${
+                      isSameDay(day, TODAY) ? 'bg-teal-600 text-white font-semibold' : ''
+                    }`}>
+                      {format(day, 'd')}
+                    </span>
                   </div>
-                  {daysToShow.map((day) => {
-                    const slotAppts = getApptsForSlot(day, hour)
-                    return (
-                      <div
-                        key={day.toISOString()}
-                        className="border-l p-0.5 space-y-0.5"
-                        onClick={() => {
-                          setSelectedDate(format(day, 'yyyy-MM-dd'))
-                          setShowNew(true)
-                        }}
-                      >
-                        {slotAppts.map((a) => {
-                          const patient = patientMap[a.patientId]
-                          return (
-                            <div
-                              key={a.id}
-                              className={`${STATUS_COLOR[a.status] ?? 'bg-zinc-400'} cursor-pointer rounded px-1.5 py-1 text-white`}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                navigate(`/patients/${a.patientId}`)
-                              }}
-                            >
-                              <p className="text-xs font-medium leading-tight truncate">
-                                {patient ? `${patient.firstName} ${patient.lastName[0]}.` : 'Unknown'}
-                              </p>
-                              <p className="text-xs opacity-80">{format(new Date(a.datetime), 'h:mm a')} · {a.durationMin}m</p>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )
-                  })}
-                </div>
-              ))}
+                ))}
+              </div>
+              {/* Hour rows */}
+              <div className="overflow-y-auto" style={{ maxHeight: '60vh' }}>
+                {HOURS.map((hour) => (
+                  <div
+                    key={hour}
+                    className="grid border-b last:border-0"
+                    style={{ gridTemplateColumns: `4rem repeat(${daysToShow.length}, 1fr)`, minHeight: '4rem' }}
+                  >
+                    <div className="flex items-start justify-end pr-3 pt-1 text-xs text-muted-foreground">
+                      {format(new Date().setHours(hour, 0, 0), 'h a')}
+                    </div>
+                    {daysToShow.map((day) => {
+                      const slotAppts = getApptsForSlot(day, hour)
+                      return (
+                        <div
+                          key={day.toISOString()}
+                          className="border-l p-0.5 space-y-0.5"
+                          onClick={() => { setSelectedDate(format(day, 'yyyy-MM-dd')); setShowNew(true) }}
+                        >
+                          {slotAppts.map((a) => {
+                            const patient = patientMap[a.patientId]
+                            return (
+                              <div
+                                key={a.id}
+                                className={`${STATUS_COLOR[a.status] ?? 'bg-zinc-400'} cursor-pointer rounded px-1.5 py-1 text-white`}
+                                onClick={(e) => { e.stopPropagation(); navigate(`/patients/${a.patientId}`) }}
+                              >
+                                <p className="text-xs font-medium leading-tight truncate">
+                                  {patient ? `${patient.firstName} ${patient.lastName[0]}.` : 'Unknown'}
+                                </p>
+                                <p className="text-xs opacity-80">{format(new Date(a.datetime), 'h:mm a')} · {a.durationMin}m</p>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right: Booking Inbox + Appointment Details */}

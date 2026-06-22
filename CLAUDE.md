@@ -209,7 +209,7 @@ A slice is complete only when:
 
 ---
 
-## Build Status (updated 2026-06-22 — slice 9 in progress)
+## Build Status (updated 2026-06-22 — all slices complete)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -229,17 +229,17 @@ A slice is complete only when:
 | 6 | Visit/Chart — TCM note form, point badge autocomplete, Suggest Points, SOAP scaffold | ✅ Done |
 | 7 | Treatment Plans — create/edit, progress bar vs completed visits | ✅ Done |
 | 8 | Billing — invoice list, mark-paid, superbill print view, new invoice with CPT defaults | ✅ Done |
-| 9 | Polish pass — competitor gap features (eligibility check, pain trend, est. owes) | ⏳ In Progress |
+| 9 | Polish pass — competitor gap features, month calendar, help drawer | ✅ Done |
 
 ### Known gaps (to address in slice 9)
 
 | Item | Where | Notes |
 |------|-------|-------|
-| Month calendar view | Schedule | Only Day/Week built; Month view deferred |
+| Month calendar view | Schedule | ✅ Done — `MonthGrid` component in `Schedule.jsx`. Day cells show appointment pills; clicking a day switches to day view. |
 | Patient Archive action | Patient detail | ✅ Fixed — Archive / Reactivate button added to patient detail header |
 | Visit decrement timing | Schedule → complete | Visits decrement on chart save, not on "Mark Complete" click — PRD implies decrement at complete; current behavior is safer (requires chart to be saved first) |
 | Vercel deployment config | Root | ✅ Done — `vercel.json` added, deployed to https://accuworld.vercel.app |
-| Demo walkthrough end-to-end test | All | PRD Section 14 flow: New Patient → Schedule → Complete → Chart → Treatment Plan → Superbill |
+| Demo walkthrough / in-app help | All | ✅ Done — "Help & Demo Guide" drawer in sidebar footer. Contains 5-step demo checklist, insurance flag color guide, and pages-at-a-glance reference. |
 | Console warnings audit | All | ✅ Fixed — removed unused imports (useEffect, insMap, insuranceProfiles, visits) in Visits/Schedule/Billing |
 | **Simulated eligibility check** | Insurance cockpit | ✅ Done — "Check Eligibility" button per row. 1.2s spinner → inline result (teal/red/grey). Logic in `Insurance.jsx:mockEligibilityResult()`. |
 | **Pain level trend chart** | PatientDetail | ✅ Done — recharts `LineChart` in `PatientDetail.jsx`, shown when patient has ≥2 visits. Historical seed visits added for p1 (v8–v11) and p2 (v12–v14). |
@@ -255,3 +255,5 @@ A slice is complete only when:
 - **Pain Trend chart threshold is ≥2 visits** — chart is hidden for patients with only one visit (Sandra Kim, Robert Mitchell, Patricia Lane, Angela Washington) rather than showing a meaningless single-point graph.
 - **Historical seed visits added** — v8–v11 for Maria Rodriguez (Jan–May 2026, pain 8→5) and v12–v14 for James Thompson (Dec 2025–Mar 2026, pain 8→5) to populate the pain trend chart. `visitsUsed` in their insurance profiles was not changed — seed visit count and insurance counters are intentionally decoupled in the prototype.
 - **Est. Patient Owes logic** — deductible-met patients show copay only; deductible-pending adds a note ("$30 copay · deductible not yet met"); self-pay and not-covered show $80/visit; unverified shows "Verify to calculate".
+- **Month calendar** — `MonthGrid` is a standalone function component in `Schedule.jsx` (not a separate file) because it shares `STATUS_COLOR` and `TODAY` constants with no other consumers. Clicking any day cell switches view to 'day' for that date.
+- **Help drawer state lives in Layout.jsx** — `showHelp` is passed down as `onHelpOpen` prop to Sidebar. The drawer itself renders at the Layout level so its fixed overlay covers the full viewport. Demo step checkboxes reset when the drawer is closed (local state in HelpDrawer).
