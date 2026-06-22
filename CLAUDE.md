@@ -231,7 +231,7 @@ A slice is complete only when:
 | 8 | Billing — invoice list, mark-paid, superbill print view, new invoice with CPT defaults | ✅ Done |
 | 9 | Polish pass — competitor gap features, month calendar, help drawer | ✅ Done |
 
-### Known gaps (to address in slice 9)
+### Slice 9 items — all resolved
 
 | Item | Where | Notes |
 |------|-------|-------|
@@ -249,7 +249,6 @@ A slice is complete only when:
 
 - **"Today" is hardcoded** as `2026-06-21` in `Dashboard.jsx` and `Schedule.jsx` so seed data flags appear correctly on every demo run.
 - **State persists to localStorage** automatically; "Reset Data" button in demo banner restores seed state.
-- **No month view** — calendar shows Day and Week. Sufficient for the demo; month view is post-polish if needed.
 - **Visit decrement on chart save** — safer for demo than on appointment complete, as it requires the practitioner to actually open and save the chart.
 - **Eligibility check is fully simulated** — `mockEligibilityResult()` in `Insurance.jsx` derives its response from the existing seed insurance profile (coverage status, visits remaining, copay). No real API call. The 1.2s delay is intentional to make the interaction feel authentic.
 - **Pain Trend chart threshold is ≥2 visits** — chart is hidden for patients with only one visit (Sandra Kim, Robert Mitchell, Patricia Lane, Angela Washington) rather than showing a meaningless single-point graph.
