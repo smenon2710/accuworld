@@ -30,15 +30,21 @@ export default function Visits() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const apptId = searchParams.get('appt')
+  const patientIdParam = searchParams.get('patient')
   const { patients, appointments, visits, insuranceProfiles, addVisit, updateVisit, updateAppointment, updateInsurance } = useApp()
 
   const appointment = apptId ? appointments.find((a) => a.id === apptId) : null
   const existingVisit = appointment ? visits.find((v) => v.appointmentId === apptId) : null
 
-  const patient = appointment ? patients.find((p) => p.id === appointment.patientId) : null
+  const patient = appointment
+    ? patients.find((p) => p.id === appointment.patientId)
+    : patientIdParam
+    ? patients.find((p) => p.id === patientIdParam)
+    : null
   const ins = patient ? insuranceProfiles.find((i) => i.patientId === patient.id) : null
 
   const [form, setForm] = useState({
+    visitDate: existingVisit?.date ?? '2026-06-21',
     chiefComplaint: existingVisit?.chiefComplaint ?? '',
     painLevel: existingVisit?.painLevel ?? 5,
     pulseRate: existingVisit?.pulseRate ?? 'Normal',
@@ -77,13 +83,14 @@ export default function Visits() {
   }
 
   function handleSave() {
-    if (!appointment) return
+    if (!patient) return
 
+    const { visitDate, ...formData } = form
     const visitData = {
-      ...form,
-      appointmentId: apptId,
-      patientId: appointment.patientId,
-      date: appointment.datetime.slice(0, 10),
+      ...formData,
+      appointmentId: apptId ?? null,
+      patientId: patient.id,
+      date: apptId ? appointment.datetime.slice(0, 10) : visitDate,
     }
 
     if (existingVisit) {
@@ -91,19 +98,20 @@ export default function Visits() {
     } else {
       addVisit({ id: `v${Date.now()}`, ...visitData })
 
-      // Mark appointment complete and decrement insurance visits
-      updateAppointment(apptId, { status: APPOINTMENT_STATUS.COMPLETED })
-
-      if (ins && ins.coverageStatus === COVERAGE_STATUS.COVERED) {
-        updateInsurance(patient.id, { visitsUsed: ins.visitsUsed + 1 })
+      if (apptId) {
+        // Mark appointment complete and decrement insurance visits
+        updateAppointment(apptId, { status: APPOINTMENT_STATUS.COMPLETED })
+        if (ins && ins.coverageStatus === COVERAGE_STATUS.COVERED) {
+          updateInsurance(patient.id, { visitsUsed: ins.visitsUsed + 1 })
+        }
       }
     }
 
     setSaved(true)
   }
 
-  // No appointment selected — show list of recent visits
-  if (!apptId) {
+  // No context — show list of recent visits
+  if (!apptId && !patientIdParam) {
     const recentVisits = [...visits]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 20)
@@ -171,11 +179,20 @@ export default function Visits() {
     )
   }
 
-  if (!appointment) {
+  if (apptId && !appointment) {
     return (
       <div className="rounded-lg border border-dashed p-10 text-center">
         <p className="text-sm text-muted-foreground">Appointment <strong>{apptId}</strong> not found.</p>
         <Button variant="link" onClick={() => navigate('/visits')}>Back to visits</Button>
+      </div>
+    )
+  }
+
+  if (patientIdParam && !patient) {
+    return (
+      <div className="rounded-lg border border-dashed p-10 text-center">
+        <p className="text-sm text-muted-foreground">Patient <strong>{patientIdParam}</strong> not found.</p>
+        <Button variant="link" onClick={() => navigate('/patients')}>Back to patients</Button>
       </div>
     )
   }
@@ -185,15 +202,30 @@ export default function Visits() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <button onClick={() => navigate('/visits')} className="mb-1 text-sm text-muted-foreground hover:text-zinc-900">
-            ← All Visits
+          <button
+            onClick={() => navigate(patientIdParam ? `/patients/${patientIdParam}` : '/visits')}
+            className="mb-1 text-sm text-muted-foreground hover:text-zinc-900"
+          >
+            {patientIdParam ? '← Patient' : '← All Visits'}
           </button>
           <h1 className="text-xl font-semibold text-zinc-900">
-            TCM Chart — {patient ? `${patient.firstName} ${patient.lastName}` : 'Patient'}
+            {apptId ? 'TCM Chart' : 'New Note'} — {patient ? `${patient.firstName} ${patient.lastName}` : 'Patient'}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            {format(new Date(appointment.datetime), 'EEEE, MMMM d, yyyy · h:mm a')}
-          </p>
+          {apptId ? (
+            <p className="text-sm text-muted-foreground">
+              {format(new Date(appointment.datetime), 'EEEE, MMMM d, yyyy · h:mm a')}
+            </p>
+          ) : (
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm text-muted-foreground">Date</span>
+              <Input
+                type="date"
+                value={form.visitDate}
+                onChange={(e) => set('visitDate', e.target.value)}
+                className="h-7 w-40 text-sm"
+              />
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {saved && <span className="text-sm text-teal-600">Saved ✓</span>}

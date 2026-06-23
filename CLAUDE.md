@@ -209,7 +209,7 @@ A slice is complete only when:
 
 ---
 
-## Build Status (updated 2026-06-22 — all slices complete)
+## Build Status (updated 2026-06-22 — all slices complete + post-slice enhancements)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -245,6 +245,13 @@ A slice is complete only when:
 | **Pain level trend chart** | PatientDetail | ✅ Done — recharts `LineChart` in `PatientDetail.jsx`, shown when patient has ≥2 visits. Historical seed visits added for p1 (v8–v11) and p2 (v12–v14). |
 | **Expected patient responsibility** | PatientDetail | ✅ Done — "Est. Patient Owes" field in insurance card. Logic in `PatientDetail.jsx:estPatientOwes()`. Amber for deductible-pending, teal for confirmed, grey for unverified. |
 
+### Post-slice enhancements
+
+| Feature | Where | Notes |
+|---------|-------|-------|
+| Standalone visit notes | Patient detail → Visit History | "New Note" button on each patient's Visit History card. Creates a visit not tied to an appointment (`/visits?patient=<id>`). Date picker defaults to prototype today. No appointment status change or insurance decrement. |
+| View mode toggle (Front Desk / Practitioner) | Sidebar | Segmented pill below the logo. Stored in AppContext + `aw_viewMode` localStorage key. Front Desk hides Visit/Chart and Treatment Plans; emphasizes Schedule, Insurance, Billing with teal icon + bold text. Practitioner restores all items with emphasis on Visit/Chart. Cosmetic only — no auth, no roles. |
+
 ### Prototype-specific decisions logged here
 
 - **"Today" is hardcoded** as `2026-06-21` in `Dashboard.jsx` and `Schedule.jsx` so seed data flags appear correctly on every demo run.
@@ -256,3 +263,5 @@ A slice is complete only when:
 - **Est. Patient Owes logic** — deductible-met patients show copay only; deductible-pending adds a note ("$30 copay · deductible not yet met"); self-pay and not-covered show $80/visit; unverified shows "Verify to calculate".
 - **Month calendar** — `MonthGrid` is a standalone function component in `Schedule.jsx` (not a separate file) because it shares `STATUS_COLOR` and `TODAY` constants with no other consumers. Clicking any day cell switches view to 'day' for that date.
 - **Help drawer state lives in Layout.jsx** — `showHelp` is passed down as `onHelpOpen` prop to Sidebar. The drawer itself renders at the Layout level so its fixed overlay covers the full viewport. Demo step checkboxes reset when the drawer is closed (local state in HelpDrawer).
+- **Standalone visit notes** — `Visits.jsx` handles both `?appt=<id>` (appointment-linked) and `?patient=<id>` (standalone) flows. Standalone notes skip appointment status change and insurance decrement. Date defaults to prototype today but is editable via a date input.
+- **View mode toggle** — `viewMode` ('practitioner' | 'frontdesk') lives in AppContext, persisted to `aw_viewMode`. `Sidebar.jsx` reads it to filter nav items (`practitionerOnly` items hidden in Front Desk) and apply emphasis (`emphasizeIn` items get teal icon + bold weight when that mode is active). No auth or real roles — cosmetic only.

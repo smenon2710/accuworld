@@ -28,6 +28,7 @@ function saveToStorage(key, value) {
 }
 
 export function AppProvider({ children }) {
+  const [viewMode, setViewModeState] = useState(() => loadFromStorage('aw_viewMode', 'practitioner'))
   const [patients, setPatients] = useState(() => loadFromStorage('aw_patients', seedPatients))
   const [insuranceProfiles, setInsuranceProfiles] = useState(() =>
     loadFromStorage('aw_insurance', seedInsuranceProfiles)
@@ -40,6 +41,11 @@ export function AppProvider({ children }) {
     loadFromStorage('aw_plans', seedTreatmentPlans)
   )
   const [invoices, setInvoices] = useState(() => loadFromStorage('aw_invoices', seedInvoices))
+
+  const setViewMode = useCallback((mode) => {
+    setViewModeState(mode)
+    saveToStorage('aw_viewMode', mode)
+  }, [])
 
   // ── Patients ──────────────────────────────────────────────────────────────
   const addPatient = useCallback((patient) => {
@@ -156,11 +162,14 @@ export function AppProvider({ children }) {
     setVisits(seedVisits)
     setTreatmentPlans(seedTreatmentPlans)
     setInvoices(seedInvoices)
+    setViewModeState('practitioner')
     localStorage.clear()
     console.log('[AppContext] reset to seed data')
   }, [])
 
   const value = {
+    viewMode,
+    setViewMode,
     patients,
     insuranceProfiles,
     appointments,

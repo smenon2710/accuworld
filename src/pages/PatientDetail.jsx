@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft, Phone, Mail, CalendarDays, ChevronDown, ChevronUp,
-  Edit2, AlertCircle, Clock, Archive, RotateCcw,
+  Edit2, AlertCircle, Clock, Archive, RotateCcw, Plus,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
@@ -359,7 +359,12 @@ export default function PatientDetail() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Visit History</CardTitle>
-                <Link to="/visits" className="text-xs text-teal-700 hover:underline">All visits</Link>
+                <div className="flex items-center gap-3">
+                  <Button size="sm" variant="outline" onClick={() => navigate(`/visits?patient=${id}`)}>
+                    <Plus className="h-3.5 w-3.5" /> New Note
+                  </Button>
+                  <Link to="/visits" className="text-xs text-teal-700 hover:underline">All visits</Link>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
