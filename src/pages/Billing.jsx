@@ -14,6 +14,13 @@ import {
 } from '@/components/ui/dialog'
 import { PAYMENT_METHOD, SELF_PAY_RATE, COVERAGE_STATUS } from '@/data/seed'
 
+// Which payment methods show a transaction reference field, and what to label it
+const REF_LABEL = {
+  zelle: 'Confirmation #',
+  card: 'Last 4 / Transaction ID',
+  check: 'Check #',
+}
+
 const CPT_DEFAULTS = [
   { description: 'Acupuncture — 1st 15 min', cptCode: '97810', units: 1, amount: 80 },
   { description: 'Acupuncture — ea addl 15 min', cptCode: '97811', units: 1, amount: 20 },
@@ -93,6 +100,8 @@ export default function Billing() {
   const [showSuperbill, setShowSuperbill] = useState(null)
   const [markPaidTarget, setMarkPaidTarget] = useState(null)
   const [payMethod, setPayMethod] = useState(PAYMENT_METHOD.CASH)
+  const [transactionRef, setTransactionRef] = useState('')
+  const [paymentNote, setPaymentNote] = useState('')
 
   const [newForm, setNewForm] = useState({
     patientId: '',
@@ -158,8 +167,21 @@ export default function Billing() {
   }
 
   function handleMarkPaid() {
-    updateInvoice(markPaidTarget, { paid: true, paymentMethod: payMethod })
+    updateInvoice(markPaidTarget, {
+      paid: true,
+      paymentMethod: payMethod,
+      ...(transactionRef.trim() ? { transactionRef: transactionRef.trim() } : {}),
+      ...(paymentNote.trim() ? { paymentNote: paymentNote.trim() } : {}),
+    })
     setMarkPaidTarget(null)
+    setTransactionRef('')
+    setPaymentNote('')
+  }
+
+  function openMarkPaid(invoiceId) {
+    setMarkPaidTarget(invoiceId)
+    setTransactionRef('')
+    setPaymentNote('')
   }
 
   const superbillInvoice = showSuperbill ? invoices.find((inv) => inv.id === showSuperbill) : null
@@ -251,6 +273,12 @@ export default function Billing() {
                           {inv.paymentMethod && (
                             <p className="text-xs text-muted-foreground mt-0.5 capitalize">{inv.paymentMethod}</p>
                           )}
+                          {inv.transactionRef && (
+                            <p className="text-xs text-muted-foreground">{inv.transactionRef}</p>
+                          )}
+                          {inv.paymentNote && (
+                            <p className="text-xs text-muted-foreground italic">{inv.paymentNote}</p>
+                          )}
                         </div>
                       ) : (
                         <Badge variant="warning">Unpaid</Badge>
@@ -259,7 +287,7 @@ export default function Billing() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {!inv.paid && (
-                          <Button size="sm" variant="outline" onClick={() => setMarkPaidTarget(inv.id)}>
+                          <Button size="sm" variant="outline" onClick={() => openMarkPaid(inv.id)}>
                             <DollarSign className="h-3.5 w-3.5" /> Mark Paid
                           </Button>
                         )}
@@ -375,7 +403,7 @@ export default function Billing() {
       </Dialog>
 
       {/* Mark Paid Dialog */}
-      <Dialog open={!!markPaidTarget} onOpenChange={(o) => !o && setMarkPaidTarget(null)}>
+      <Dialog open={!!markPaidTarget} onOpenChange={(o) => { if (!o) { setMarkPaidTarget(null); setTransactionRef(''); setPaymentNote('') } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Mark as Paid</DialogTitle></DialogHeader>
           <div className="space-y-4 p-6 pt-3">
@@ -387,8 +415,26 @@ export default function Billing() {
                 ))}
               </Select>
             </div>
+            {REF_LABEL[payMethod] && (
+              <div className="space-y-1.5">
+                <Label>{REF_LABEL[payMethod]} <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <Input
+                  value={transactionRef}
+                  onChange={(e) => setTransactionRef(e.target.value)}
+                  placeholder="Optional"
+                />
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label>Note <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                value={paymentNote}
+                onChange={(e) => setPaymentNote(e.target.value)}
+                placeholder="e.g. paid before visit, split payment…"
+              />
+            </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setMarkPaidTarget(null)}>Cancel</Button>
+              <Button variant="outline" onClick={() => { setMarkPaidTarget(null); setTransactionRef(''); setPaymentNote('') }}>Cancel</Button>
               <Button onClick={handleMarkPaid}>Confirm</Button>
             </DialogFooter>
           </div>

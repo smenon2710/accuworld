@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
-import { Lightbulb, Save, ChevronDown, ChevronUp, Sparkles, Loader2 } from 'lucide-react'
+import { Lightbulb, Save, ChevronDown, ChevronUp, Sparkles, Loader2, Wand2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useApp } from '@/context/AppContext'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import PointBadgeInput from '@/components/visits/PointBadgeInput'
 import { suggestPointsForComplaint } from '@/data/pointSuggestions'
 import { APPOINTMENT_STATUS, COVERAGE_STATUS } from '@/data/seed'
+import { suggestHomeCareForComplaint } from '@/data/homeCareSuggestions'
 
 const SOAP_TEMPLATE = `S: [Chief complaint — what the patient reports today, severity, aggravating/relieving factors]
 
@@ -25,6 +26,38 @@ const MODALITY_OPTIONS = [
   'Acupuncture', 'E-Stim', 'Deep Tissue Massage',
   'Tsubo/Vibration', 'Cupping', 'Moxibustion',
 ]
+
+// Shared streaming helper for all AI suggestion calls in this file.
+async function streamOpenRouter(apiKey, prompt, onToken) {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://accuworld.vercel.app',
+      'X-Title': 'AccuWorld - TCM Charting',
+    },
+    body: JSON.stringify({ model: 'openrouter/free', messages: [{ role: 'user', content: prompt }], stream: true }),
+  })
+  if (!res.ok) throw new Error(`OpenRouter error ${res.status}: ${await res.text()}`)
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let acc = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    for (const line of decoder.decode(value, { stream: true }).split('\n')) {
+      if (!line.startsWith('data: ')) continue
+      const data = line.slice(6).trim()
+      if (data === '[DONE]') break
+      try {
+        acc += JSON.parse(data).choices?.[0]?.delta?.content ?? ''
+        onToken(acc)
+      } catch { /* skip malformed chunk */ }
+    }
+  }
+  return acc
+}
 
 export default function Visits() {
   const [searchParams] = useSearchParams()
@@ -64,6 +97,14 @@ export default function Visits() {
   const [draftingNote, setDraftingNote] = useState(false)
   const [draftError, setDraftError] = useState(null)
   const [suggestHint, setSuggestHint] = useState(null)
+  const [autoFillHint, setAutoFillHint] = useState(null)
+  const [diagnosisLoading, setDiagnosisLoading] = useState(false)
+  const [diagnosisSuggestion, setDiagnosisSuggestion] = useState(null)
+  const [homeCareLoading, setHomeCareLoading] = useState(false)
+  const [homeCareSuggestion, setHomeCareSuggestion] = useState(null)
+  const [homeCareHint, setHomeCareHint] = useState(null)
+  const [formulaLoading, setFormulaLoading] = useState(false)
+  const [formulaSuggestion, setFormulaSuggestion] = useState(null)
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
@@ -178,6 +219,102 @@ Be specific, clinical, and concise. Use proper TCM terminology.`
       set('soapNote', SOAP_TEMPLATE)
     } finally {
       setDraftingNote(false)
+    }
+  }
+
+  function handleAutoFillObjective() {
+    const text = `Pulse: ${form.pulseRate}, ${form.pulseQuality}. Tongue: ${form.tongueBody} body, ${form.tongueCoating} coating.`
+    const lines = form.soapNote.split('\n')
+    const oIdx = lines.findIndex((l) => l.startsWith('O:'))
+    if (oIdx !== -1) {
+      lines[oIdx] = `O: ${text}`
+      set('soapNote', lines.join('\n'))
+      setShowSoap(true)
+      setAutoFillHint(null)
+    } else {
+      setAutoFillHint(text)
+    }
+  }
+
+  async function handleSuggestDiagnosis() {
+    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY
+    if (!apiKey) {
+      setDiagnosisSuggestion('Add VITE_OPENROUTER_API_KEY to .env to enable AI suggestions.')
+      return
+    }
+    setDiagnosisLoading(true)
+    setDiagnosisSuggestion(null)
+    const prompt = `You are an expert TCM practitioner. Based on these clinical findings, suggest 1–3 TCM pattern diagnoses. Be concise.
+
+Chief complaint: ${form.chiefComplaint || 'Not specified'}
+Pulse: ${form.pulseRate}, ${form.pulseQuality}
+Tongue: ${form.tongueBody} body, ${form.tongueCoating} coating
+
+Return just the pattern diagnoses in this exact format (no preamble):
+1. Pattern Name — brief rationale (10–15 words)
+2. Pattern Name — rationale (if applicable)
+3. Pattern Name — rationale (if applicable)`
+    try {
+      await streamOpenRouter(apiKey, prompt, (acc) => setDiagnosisSuggestion(acc))
+    } catch (err) {
+      console.error('[Visits] Suggest diagnosis failed:', err)
+      setDiagnosisSuggestion('Suggestion failed — check your API key or network.')
+    } finally {
+      setDiagnosisLoading(false)
+    }
+  }
+
+  async function handleSuggestHomeCare() {
+    setHomeCareSuggestion(null)
+    setHomeCareHint(null)
+    if (!form.chiefComplaint.trim()) {
+      setHomeCareHint('Enter a chief complaint to get home care suggestions.')
+      return
+    }
+    const local = suggestHomeCareForComplaint(form.chiefComplaint)
+    if (local.length > 0) {
+      setHomeCareSuggestion(local.join(' '))
+      return
+    }
+    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY
+    if (!apiKey) {
+      setHomeCareHint('No suggestions for this complaint. Try keywords like "lower back", "headache", "neck", "sciatica".')
+      return
+    }
+    setHomeCareLoading(true)
+    const prompt = `You are a TCM practitioner. Give 2–3 home care recommendations for a patient whose chief complaint is: "${form.chiefComplaint}".
+Return only brief, actionable items — one per line, no numbering, under 15 words each. No preamble.`
+    try {
+      await streamOpenRouter(apiKey, prompt, (acc) => setHomeCareSuggestion(acc))
+    } catch (err) {
+      console.error('[Visits] Suggest home care failed:', err)
+      setHomeCareHint('Suggestion failed — check your API key or network.')
+    } finally {
+      setHomeCareLoading(false)
+    }
+  }
+
+  async function handleSuggestFormula() {
+    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY
+    if (!apiKey) {
+      setFormulaSuggestion('Add VITE_OPENROUTER_API_KEY to .env to enable AI suggestions.')
+      return
+    }
+    setFormulaLoading(true)
+    setFormulaSuggestion(null)
+    const prompt = `You are a TCM practitioner. Suggest a classical herbal formula for this patient.
+
+Chief complaint: ${form.chiefComplaint || 'Not specified'}
+Treatment strategy / TCM pattern: ${form.treatmentStrategy || 'Not specified'}
+
+Return only: "Formula Name — one-sentence rationale". Nothing else.`
+    try {
+      await streamOpenRouter(apiKey, prompt, (acc) => setFormulaSuggestion(acc))
+    } catch (err) {
+      console.error('[Visits] Suggest formula failed:', err)
+      setFormulaSuggestion('Suggestion failed — check your API key or network.')
+    } finally {
+      setFormulaLoading(false)
     }
   }
 
@@ -373,7 +510,21 @@ Be specific, clinical, and concise. Use proper TCM terminology.`
 
           {/* Objective — TCM Assessment */}
           <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-base">Objective — TCM Assessment</CardTitle></CardHeader>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Objective — TCM Assessment</CardTitle>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleAutoFillObjective}
+                  className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800"
+                >
+                  <Wand2 className="h-3.5 w-3.5" />
+                  Auto-fill O:
+                </Button>
+              </div>
+            </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-3">
@@ -407,6 +558,12 @@ Be specific, clinical, and concise. Use proper TCM terminology.`
                   </div>
                 </div>
               </div>
+              {autoFillHint && (
+                <div className="rounded-md border border-teal-200 bg-teal-50 p-2.5 text-xs text-teal-700">
+                  O: section not found in SOAP note. Composed: <span className="font-medium">{autoFillHint}</span>
+                  <button type="button" onClick={() => setAutoFillHint(null)} className="ml-2 text-muted-foreground hover:text-zinc-700">✕</button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -461,31 +618,139 @@ Be specific, clinical, and concise. Use proper TCM terminology.`
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Treatment Strategy</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Treatment Strategy</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSuggestDiagnosis}
+                    disabled={diagnosisLoading}
+                    className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800 disabled:opacity-60"
+                  >
+                    {diagnosisLoading
+                      ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Suggesting…</>
+                      : <><Sparkles className="h-3.5 w-3.5" />Suggest Diagnosis</>
+                    }
+                  </Button>
+                </div>
                 <Textarea
                   value={form.treatmentStrategy}
                   onChange={(e) => set('treatmentStrategy', e.target.value)}
                   rows={2}
                   placeholder="TCM strategy and rationale…"
                 />
+                {diagnosisSuggestion && (
+                  <div className="rounded-md border border-teal-200 bg-teal-50 p-3 text-xs">
+                    <p className="whitespace-pre-wrap text-teal-800">{diagnosisSuggestion}</p>
+                    <div className="mt-2 flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-teal-700 px-2"
+                        onClick={() => { set('treatmentStrategy', diagnosisSuggestion); setDiagnosisSuggestion(null) }}
+                      >
+                        Use this →
+                      </Button>
+                      <button type="button" onClick={() => setDiagnosisSuggestion(null)} className="text-xs text-muted-foreground hover:text-zinc-700">
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
                   <Label>Herbal Formula</Label>
-                  <Input
-                    value={form.herbalFormula}
-                    onChange={(e) => set('herbalFormula', e.target.value)}
-                    placeholder="e.g. Du Huo Ji Sheng Wan"
-                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSuggestFormula}
+                    disabled={formulaLoading}
+                    className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800 disabled:opacity-60"
+                  >
+                    {formulaLoading
+                      ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Suggesting…</>
+                      : <><Sparkles className="h-3.5 w-3.5" />Suggest Formula</>
+                    }
+                  </Button>
                 </div>
-                <div className="space-y-1.5">
+                <Input
+                  value={form.herbalFormula}
+                  onChange={(e) => set('herbalFormula', e.target.value)}
+                  placeholder="e.g. Du Huo Ji Sheng Wan"
+                />
+                {formulaSuggestion && (
+                  <div className="rounded-md border border-teal-200 bg-teal-50 p-3 text-xs">
+                    <p className="text-teal-800">{formulaSuggestion}</p>
+                    <div className="mt-2 flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-teal-700 px-2"
+                        onClick={() => {
+                          const name = formulaSuggestion.split(' — ')[0].trim()
+                          set('herbalFormula', name)
+                          setFormulaSuggestion(null)
+                        }}
+                      >
+                        Use this →
+                      </Button>
+                      <button type="button" onClick={() => setFormulaSuggestion(null)} className="text-xs text-muted-foreground hover:text-zinc-700">
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
                   <Label>Home Care</Label>
-                  <Input
-                    value={form.homeCareRecommendations}
-                    onChange={(e) => set('homeCareRecommendations', e.target.value)}
-                    placeholder="Stretches, ice, activity…"
-                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSuggestHomeCare}
+                    disabled={homeCareLoading}
+                    className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800 disabled:opacity-60"
+                  >
+                    {homeCareLoading
+                      ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Suggesting…</>
+                      : <><Lightbulb className="h-3.5 w-3.5" />Suggest</>
+                    }
+                  </Button>
                 </div>
+                <Textarea
+                  value={form.homeCareRecommendations}
+                  onChange={(e) => set('homeCareRecommendations', e.target.value)}
+                  rows={2}
+                  placeholder="Stretches, ice, activity…"
+                />
+                {homeCareSuggestion && (
+                  <div className="rounded-md border border-teal-200 bg-teal-50 p-3 text-xs">
+                    <p className="whitespace-pre-wrap text-teal-800">{homeCareSuggestion}</p>
+                    <div className="mt-2 flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-teal-700 px-2"
+                        onClick={() => { set('homeCareRecommendations', homeCareSuggestion.replace(/\n+/g, ' ').trim()); setHomeCareSuggestion(null) }}
+                      >
+                        Use this →
+                      </Button>
+                      <button type="button" onClick={() => setHomeCareSuggestion(null)} className="text-xs text-muted-foreground hover:text-zinc-700">
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {homeCareHint && (
+                  <p className="text-xs text-amber-600">{homeCareHint}</p>
+                )}
               </div>
             </CardContent>
           </Card>

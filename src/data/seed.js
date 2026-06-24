@@ -913,6 +913,7 @@ export const seedInvoices = [
     total: 80,
     paid: true,
     paymentMethod: PAYMENT_METHOD.ZELLE,
+    transactionRef: 'ZLL-09284',
     isSuperbill: true,
   },
   {
@@ -953,6 +954,7 @@ export const seedInvoices = [
     total: 80,
     paid: true,
     paymentMethod: PAYMENT_METHOD.ZELLE,
+    transactionRef: 'ZLL-18374',
     isSuperbill: false,
   },
 ]
