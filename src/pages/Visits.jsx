@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { Lightbulb, Save, ChevronDown, ChevronUp, Sparkles, Loader2, Wand2 } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { useApp } from '@/context/AppContext'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -105,6 +105,28 @@ export default function Visits() {
   const [homeCareHint, setHomeCareHint] = useState(null)
   const [formulaLoading, setFormulaLoading] = useState(false)
   const [formulaSuggestion, setFormulaSuggestion] = useState(null)
+
+  // When navigating from the visit list to a form (same component instance, only search params change),
+  // useState initializers don't re-run. This effect syncs form state to the loaded visit.
+  useEffect(() => {
+    if (!existingVisit) return
+    setForm({
+      visitDate: existingVisit.date ?? '2026-06-21',
+      chiefComplaint: existingVisit.chiefComplaint ?? '',
+      painLevel: existingVisit.painLevel ?? 5,
+      pulseRate: existingVisit.pulseRate ?? 'Normal',
+      pulseQuality: existingVisit.pulseQuality ?? 'Wiry',
+      tongueBody: existingVisit.tongueBody ?? 'Pink',
+      tongueCoating: existingVisit.tongueCoating ?? 'Thin White',
+      meridians: existingVisit.meridians ?? '',
+      pointsUsed: existingVisit.pointsUsed ?? [],
+      modalities: existingVisit.modalities ?? ['Acupuncture'],
+      treatmentStrategy: existingVisit.treatmentStrategy ?? '',
+      herbalFormula: existingVisit.herbalFormula ?? '',
+      homeCareRecommendations: existingVisit.homeCareRecommendations ?? '',
+      soapNote: existingVisit.soapNote ?? SOAP_TEMPLATE,
+    })
+  }, [existingVisit?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
@@ -386,9 +408,15 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                     <tr
                       key={v.id}
                       className="border-b last:border-0 hover:bg-zinc-50/50 cursor-pointer"
-                      onClick={() => navigate(`/visits?appt=${v.appointmentId}`)}
+                      onClick={() => {
+                        if (v.appointmentId) {
+                          navigate(`/visits?appt=${v.appointmentId}`)
+                        } else {
+                          navigate(`/patients/${v.patientId}`)
+                        }
+                      }}
                     >
-                      <td className="px-4 py-3 font-medium">{format(new Date(v.date), 'MMM d, yyyy')}</td>
+                      <td className="px-4 py-3 font-medium">{format(parseISO(v.date), 'MMM d, yyyy')}</td>
                       <td className="px-4 py-3">
                         {pt ? `${pt.firstName} ${pt.lastName}` : v.patientId}
                       </td>

@@ -498,6 +498,15 @@ export const seedAppointments = [
     source: APPOINTMENT_SOURCE.TEXT,
     note: 'Headaches significantly reduced.',
   },
+  // Historical appointments — referenced by pain-trend seed visits (v8–v14)
+  { id: 'ahist1', patientId: 'p1', datetime: '2026-01-20T10:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
+  { id: 'ahist2', patientId: 'p1', datetime: '2026-02-17T10:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
+  { id: 'ahist3', patientId: 'p1', datetime: '2026-03-24T10:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
+  { id: 'ahist4', patientId: 'p1', datetime: '2026-05-05T10:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
+  { id: 'ahist5', patientId: 'p2', datetime: '2025-12-08T09:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.PHONE, note: '' },
+  { id: 'ahist6', patientId: 'p2', datetime: '2026-01-19T09:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.PHONE, note: '' },
+  { id: 'ahist7', patientId: 'p2', datetime: '2026-03-09T09:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.PHONE, note: '' },
+
   // No-show — for follow-up queue
   {
     id: 'a16',
