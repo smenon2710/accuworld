@@ -209,6 +209,39 @@ A slice is complete only when:
 
 ---
 
+## Backlog — discussed, not yet built (2026-06-23)
+
+Prioritized order. Implement one at a time; get it running before starting the next.
+
+### Visit / Chart — additional AI features
+
+| # | Feature | Where | Approach | Priority |
+|---|---------|-------|----------|----------|
+| 1 | Auto-fill O: section from dropdowns | Visit form → SOAP Note | Local logic — compose "Pulse: Normal, Wiry. Tongue: Pink body, Thin White coating." from the existing dropdown values. No AI call. Instant. | High |
+| 3 | TCM Pattern Diagnosis suggestion | Visit form → Treatment Strategy | "Suggest Diagnosis" button. AI call via OpenRouter — send pulse + tongue + chief complaint, return 1–3 TCM pattern options (e.g. "Liver Qi Stagnation with Blood Deficiency"). Practitioner selects or edits. Most cognitively demanding part of charting; biggest time saver. | High |
+| 4 | Home Care recommendations | Visit form → Home Care field | "Suggest Home Care" button. Start with local keyword logic matching on chief complaint (same pattern as Suggest Points). Upgrade to AI if the complaint doesn't match. Returns 2–3 actionable items (e.g. "ice 15 min post-treatment, gentle cat-cow stretches"). | Medium |
+| 5 | Herbal Formula suggestion | Visit form → Herbal Formula field | "Suggest Formula" button. Needs AI — too broad for a lookup table. Send TCM pattern + complaint, return a classical formula name with brief rationale. | Low |
+
+> Note: item 2 (SOAP note drafting) is already built. Auto-fill O: (#1) should be implemented as local logic first — it removes the most mechanical writing without adding API cost or latency.
+
+### Billing — payment method and transaction tracking
+
+| # | Feature | Where | Approach | Priority |
+|---|---------|-------|----------|----------|
+| 2 | Payment method + transaction reference on Mark Paid | Billing → Mark Paid dialog | Extend invoice data model with `paymentMethod`, `transactionRef`, `paymentNote`. Add payment method dropdown (reuse existing `PAYMENT_METHOD` constants from `seed.js`). Show conditional reference field: Zelle → "Confirmation number"; Card → "Last 4 / Transaction ID"; Check → "Check number"; Cash / Insurance → field hidden. | High |
+
+**Data model change** (no migration needed — just extend the object on save):
+```js
+// Add to invoice on mark-paid:
+paymentMethod: 'zelle' | 'card' | 'check' | 'cash' | 'insurance'
+transactionRef: string   // optional
+paymentNote: string      // optional free-text
+```
+
+**Billing list view change**: add a Payment Method column; show transaction ref as a tooltip or secondary line. Useful for end-of-month cash reconciliation and matches CollaborateMD's patient responsibility tracking feature.
+
+---
+
 ## Build Status (updated 2026-06-23 — all slices complete + AI SOAP note drafting)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
