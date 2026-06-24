@@ -209,40 +209,13 @@ A slice is complete only when:
 
 ---
 
-## Backlog — discussed, not yet built (2026-06-23)
+## Backlog — all items shipped (2026-06-24)
 
-Prioritized order. Implement one at a time; get it running before starting the next.
-
-### Visit / Chart — additional AI features
-
-| # | Feature | Where | Approach | Priority |
-|---|---------|-------|----------|----------|
-| 1 | Auto-fill O: section from dropdowns | Visit form → SOAP Note | Local logic — compose "Pulse: Normal, Wiry. Tongue: Pink body, Thin White coating." from the existing dropdown values. No AI call. Instant. | High |
-| 3 | TCM Pattern Diagnosis suggestion | Visit form → Treatment Strategy | "Suggest Diagnosis" button. AI call via OpenRouter — send pulse + tongue + chief complaint, return 1–3 TCM pattern options (e.g. "Liver Qi Stagnation with Blood Deficiency"). Practitioner selects or edits. Most cognitively demanding part of charting; biggest time saver. | High |
-| 4 | Home Care recommendations | Visit form → Home Care field | "Suggest Home Care" button. Start with local keyword logic matching on chief complaint (same pattern as Suggest Points). Upgrade to AI if the complaint doesn't match. Returns 2–3 actionable items (e.g. "ice 15 min post-treatment, gentle cat-cow stretches"). | Medium |
-| 5 | Herbal Formula suggestion | Visit form → Herbal Formula field | "Suggest Formula" button. Needs AI — too broad for a lookup table. Send TCM pattern + complaint, return a classical formula name with brief rationale. | Low |
-
-> Note: item 2 (SOAP note drafting) is already built. Auto-fill O: (#1) should be implemented as local logic first — it removes the most mechanical writing without adding API cost or latency.
-
-### Billing — payment method and transaction tracking
-
-| # | Feature | Where | Approach | Priority |
-|---|---------|-------|----------|----------|
-| 2 | Payment method + transaction reference on Mark Paid | Billing → Mark Paid dialog | Extend invoice data model with `paymentMethod`, `transactionRef`, `paymentNote`. Add payment method dropdown (reuse existing `PAYMENT_METHOD` constants from `seed.js`). Show conditional reference field: Zelle → "Confirmation number"; Card → "Last 4 / Transaction ID"; Check → "Check number"; Cash / Insurance → field hidden. | High |
-
-**Data model change** (no migration needed — just extend the object on save):
-```js
-// Add to invoice on mark-paid:
-paymentMethod: 'zelle' | 'card' | 'check' | 'cash' | 'insurance'
-transactionRef: string   // optional
-paymentNote: string      // optional free-text
-```
-
-**Billing list view change**: add a Payment Method column; show transaction ref as a tooltip or secondary line. Useful for end-of-month cash reconciliation and matches CollaborateMD's patient responsibility tracking feature.
+All backlog items from the 2026-06-23 planning session have been implemented. No open backlog items remain.
 
 ---
 
-## Build Status (updated 2026-06-23 — all slices complete + AI SOAP note drafting)
+## Build Status (updated 2026-06-24 — all slices + all backlog items complete)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -286,6 +259,20 @@ paymentNote: string      // optional free-text
 | View mode toggle (Front Desk / Practitioner) | Sidebar | Segmented pill below the logo. Stored in AppContext + `aw_viewMode` localStorage key. Front Desk hides Visit/Chart and Treatment Plans; emphasizes Schedule, Insurance, Billing with teal icon + bold text. Practitioner restores all items with emphasis on Visit/Chart. Cosmetic only — no auth, no roles. |
 | AI SOAP note drafting | Visit / Chart | "Draft with AI" button in the SOAP Note card header. Streams a TCM-accurate SOAP note via OpenRouter (`openrouter/free` — free models only). Requires `VITE_OPENROUTER_API_KEY` in `.env` (local) and Vercel environment variables (production). Graceful fallback: restores the SOAP template with an amber error banner if the key is missing or the call fails. Tagged with `HTTP-Referer: https://accuworld.vercel.app` and `X-Title: AccuWorld - SOAP Note Drafting` for OpenRouter activity dashboard. |
 | Suggest Points feedback | Visit / Chart | "Suggest Points" button now shows an amber hint when the complaint field is empty or contains no recognizable keyword, guiding the practitioner toward supported terms. Previously silent on no-match. |
+| Auto-fill O: section | Visit / Chart | "Auto-fill O:" button (Wand2 icon) in the Objective card header. Composes a one-line objective string from the pulse and tongue dropdowns and injects it into the O: line of the SOAP note. No AI call — instant local logic. |
+| Suggest Diagnosis | Visit / Chart → Treatment Strategy | "Suggest Diagnosis" button (Sparkles icon). Streams 1–3 TCM pattern diagnoses via OpenRouter based on chief complaint, pulse, and tongue. Result appears in a teal suggestion box below the field; practitioner can edit before saving. |
+| Suggest Home Care | Visit / Chart → Home Care | "Suggest" button on the Home Care field. Checks `src/data/homeCareSuggestions.js` local keyword map first (15 categories); falls back to OpenRouter if no match. Shows amber hint when complaint is empty or unrecognized. |
+| Suggest Formula | Visit / Chart → Herbal Formula | "Suggest Formula" button. Streams a classical formula name + one-sentence rationale from OpenRouter using the complaint and treatment strategy fields. |
+| Billing payment method + transaction ref | Billing → Mark Paid dialog | Mark Paid dialog extended with payment method dropdown (cash/card/zelle/check/insurance). Conditional reference field appears for zelle/card/check. Optional note field always visible. Invoice table shows method and ref as secondary lines for cash reconciliation. Data model: `paymentMethod`, `transactionRef`, `paymentNote` on invoice. |
+
+### Bug fixes (2026-06-24)
+
+| Bug | Fix |
+|-----|-----|
+| Visit chart form empty when reopening from Visit/Chart list | Added `useEffect` watching `existingVisit?.id` to reinitialize all form fields — React Router same-route navigation kept the component mounted so `useState` initializers didn't re-run |
+| Historical visits (v8–v14) showed "Appointment not found" | Added `ahist1`–`ahist7` as completed historical appointments to `seedAppointments` in `seed.js` — they were referenced in visits but missing from the appointments array |
+| Standalone notes (appointmentId: null) showed "Appointment null not found" | List click handler now navigates to `/patients/${v.patientId}` when `appointmentId` is null, instead of `/visits?appt=null` |
+| Visit list dates showed one day early (Jun 20 instead of Jun 21) | Replaced `new Date(v.date)` with `parseISO(v.date)` — date-only strings parsed as UTC midnight, shifted back one day in US timezones |
 
 ### Environment variables
 
@@ -306,3 +293,8 @@ paymentNote: string      // optional free-text
 - **Help drawer state lives in Layout.jsx** — `showHelp` is passed down as `onHelpOpen` prop to Sidebar. The drawer itself renders at the Layout level so its fixed overlay covers the full viewport. Demo step checkboxes reset when the drawer is closed (local state in HelpDrawer).
 - **Standalone visit notes** — `Visits.jsx` handles both `?appt=<id>` (appointment-linked) and `?patient=<id>` (standalone) flows. Standalone notes skip appointment status change and insurance decrement. Date defaults to prototype today but is editable via a date input.
 - **View mode toggle** — `viewMode` ('practitioner' | 'frontdesk') lives in AppContext, persisted to `aw_viewMode`. `Sidebar.jsx` reads it to filter nav items (`practitionerOnly` items hidden in Front Desk) and apply emphasis (`emphasizeIn` items get teal icon + bold weight when that mode is active). No auth or real roles — cosmetic only.
+- **AI charting suggest buttons** — all four suggestion features in `Visits.jsx` use a shared `streamOpenRouter()` module-level helper. Auto-fill O: is pure local logic (no API). Suggest Home Care checks `src/data/homeCareSuggestions.js` (15 keyword categories) before falling back to OpenRouter. Suggest Diagnosis and Suggest Formula always call OpenRouter. All AI buttons are gracefully degraded — show a static hint if the API key is missing.
+- **homeCareSuggestions.js** — new file at `src/data/homeCareSuggestions.js`, 15 complaint categories (back pain, sciatica, headache, neck, shoulder, knee, plantar fasciitis, insomnia, anxiety, digestion, fatigue, fibromyalgia, menstrual, fertility, skin). Each entry has a `keywords` array and 3 `suggestions` strings. `suggestHomeCareForComplaint(complaint)` returns an array of suggestions or `[]` on no match.
+- **Billing payment tracking** — invoice data model extended on save with optional `paymentMethod`, `transactionRef`, `paymentNote` fields. `REF_LABEL` constant in `Billing.jsx` maps method → label text. Reference field is only rendered for zelle/card/check; hidden for cash and insurance.
+- **Historical appointment IDs** — `ahist1`–`ahist7` in `seedAppointments` are stub completed appointments that exist solely to back the pain-trend seed visits (v8–v14). They have no `note` text and do not appear on the Schedule (no datetime in the visible prototype window for most of them).
+- **Visit form reinitialization** — `useEffect([existingVisit?.id])` in `Visits.jsx` syncs form state when the loaded visit changes. Safe to depend only on the ID string: changing from undefined → 'v1' fires the effect; re-renders within the same visit do not.
