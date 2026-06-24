@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
-import { Lightbulb, Save, ChevronDown, ChevronUp } from 'lucide-react'
+import { Lightbulb, Save, ChevronDown, ChevronUp, Sparkles, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useApp } from '@/context/AppContext'
 import { Button } from '@/components/ui/button'
@@ -61,6 +61,9 @@ export default function Visits() {
   })
   const [saved, setSaved] = useState(false)
   const [showSoap, setShowSoap] = useState(true)
+  const [draftingNote, setDraftingNote] = useState(false)
+  const [draftError, setDraftError] = useState(null)
+  const [suggestHint, setSuggestHint] = useState(null)
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
@@ -75,10 +78,106 @@ export default function Visits() {
   }
 
   function handleSuggestPoints() {
+    if (!form.chiefComplaint.trim()) {
+      setSuggestHint('Enter a chief complaint first.')
+      return
+    }
     const suggested = suggestPointsForComplaint(form.chiefComplaint)
     if (suggested.length > 0) {
       const merged = [...new Set([...form.pointsUsed, ...suggested])]
       set('pointsUsed', merged)
+      setSuggestHint(null)
+    } else {
+      setSuggestHint('No suggestions for this complaint — try keywords like "lower back", "sciatica", "headache".')
+    }
+  }
+
+  async function handleDraftNote() {
+    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY
+    if (!apiKey) {
+      setDraftError('Add your OpenRouter API key to .env as VITE_OPENROUTER_API_KEY to enable AI drafting.')
+      return
+    }
+
+    setDraftingNote(true)
+    setDraftError(null)
+    set('soapNote', '')
+
+    const prompt = `You are an experienced licensed acupuncturist and TCM practitioner. Write a concise clinical SOAP note based on this visit.
+
+Patient: ${patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown'}
+Chief complaint: ${form.chiefComplaint || 'Not specified'}
+Pain level: ${form.painLevel}/10
+Pulse: ${form.pulseRate}, ${form.pulseQuality}
+Tongue: ${form.tongueBody} body, ${form.tongueCoating} coating
+Meridians: ${form.meridians || 'Not specified'}
+Points used: ${form.pointsUsed.join(', ') || 'Not specified'}
+Modalities: ${form.modalities.join(', ')}
+Treatment strategy: ${form.treatmentStrategy || 'Not specified'}
+Herbal formula: ${form.herbalFormula || 'None'}
+Home care: ${form.homeCareRecommendations || 'None'}
+
+Write the SOAP note in exactly this format (no preamble, just the note):
+S: [what the patient reports — chief complaint, severity, aggravating/relieving factors]
+
+O: [TCM objective findings — pulse, tongue, palpation]
+
+A: [TCM diagnosis — pattern identification, channel involvement]
+
+P: [treatment applied today — points, modalities, herbal, home care, follow-up plan]
+
+Be specific, clinical, and concise. Use proper TCM terminology.`
+
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://accuworld.vercel.app',
+          'X-Title': 'AccuWorld - SOAP Note Drafting',
+        },
+        body: JSON.stringify({
+          model: 'openrouter/free',
+          messages: [{ role: 'user', content: prompt }],
+          stream: true,
+        }),
+      })
+
+      if (!response.ok) {
+        const err = await response.text()
+        throw new Error(`OpenRouter error ${response.status}: ${err}`)
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulated = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6).trim()
+          if (data === '[DONE]') break
+          try {
+            const parsed = JSON.parse(data)
+            const delta = parsed.choices?.[0]?.delta?.content ?? ''
+            accumulated += delta
+            set('soapNote', accumulated)
+          } catch {
+            // malformed SSE chunk — skip
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[Visits] AI draft failed:', err)
+      setDraftError('Draft failed — check your API key or network. You can still write the note manually.')
+      set('soapNote', SOAP_TEMPLATE)
+    } finally {
+      setDraftingNote(false)
     }
   }
 
@@ -338,6 +437,9 @@ export default function Visits() {
                   </Button>
                 </div>
                 <PointBadgeInput value={form.pointsUsed} onChange={(pts) => set('pointsUsed', pts)} />
+                {suggestHint && (
+                  <p className="text-xs text-amber-600">{suggestHint}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label>Modalities</Label>
@@ -390,23 +492,45 @@ export default function Visits() {
 
           {/* SOAP Note */}
           <Card>
-            <button
-              className="flex w-full items-center justify-between p-4"
-              onClick={() => setShowSoap(!showSoap)}
-              type="button"
-            >
-              <CardTitle className="text-base">SOAP Note</CardTitle>
-              {showSoap ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
+            <div className="flex items-center justify-between p-4">
+              <button
+                className="flex items-center gap-2"
+                onClick={() => setShowSoap(!showSoap)}
+                type="button"
+              >
+                <CardTitle className="text-base">SOAP Note</CardTitle>
+                {showSoap ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleDraftNote}
+                disabled={draftingNote}
+                className="h-7 gap-1.5 text-xs text-teal-700 border-teal-200 hover:bg-teal-50 hover:text-teal-800 disabled:opacity-60"
+              >
+                {draftingNote
+                  ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Drafting…</>
+                  : <><Sparkles className="h-3.5 w-3.5" />Draft with AI</>
+                }
+              </Button>
+            </div>
             {showSoap && (
               <CardContent>
+                {draftError && (
+                  <p className="mb-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700 border border-amber-200">
+                    {draftError}
+                  </p>
+                )}
                 <Textarea
                   value={form.soapNote}
                   onChange={(e) => set('soapNote', e.target.value)}
                   rows={10}
                   className="font-mono text-xs"
                 />
-                <p className="mt-2 text-xs text-muted-foreground">Template pre-filled. Edit and save manually — nothing is auto-saved.</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {draftingNote ? 'AI is writing…' : 'Edit and save manually — nothing is auto-saved.'}
+                </p>
               </CardContent>
             )}
           </Card>

@@ -209,7 +209,7 @@ A slice is complete only when:
 
 ---
 
-## Build Status (updated 2026-06-22 — all slices complete + post-slice enhancements)
+## Build Status (updated 2026-06-23 — all slices complete + AI SOAP note drafting)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -251,6 +251,14 @@ A slice is complete only when:
 |---------|-------|-------|
 | Standalone visit notes | Patient detail → Visit History | "New Note" button on each patient's Visit History card. Creates a visit not tied to an appointment (`/visits?patient=<id>`). Date picker defaults to prototype today. No appointment status change or insurance decrement. |
 | View mode toggle (Front Desk / Practitioner) | Sidebar | Segmented pill below the logo. Stored in AppContext + `aw_viewMode` localStorage key. Front Desk hides Visit/Chart and Treatment Plans; emphasizes Schedule, Insurance, Billing with teal icon + bold text. Practitioner restores all items with emphasis on Visit/Chart. Cosmetic only — no auth, no roles. |
+| AI SOAP note drafting | Visit / Chart | "Draft with AI" button in the SOAP Note card header. Streams a TCM-accurate SOAP note via OpenRouter (`openrouter/free` — free models only). Requires `VITE_OPENROUTER_API_KEY` in `.env` (local) and Vercel environment variables (production). Graceful fallback: restores the SOAP template with an amber error banner if the key is missing or the call fails. Tagged with `HTTP-Referer: https://accuworld.vercel.app` and `X-Title: AccuWorld - SOAP Note Drafting` for OpenRouter activity dashboard. |
+| Suggest Points feedback | Visit / Chart | "Suggest Points" button now shows an amber hint when the complaint field is empty or contains no recognizable keyword, guiding the practitioner toward supported terms. Previously silent on no-match. |
+
+### Environment variables
+
+| Variable | Where | Purpose |
+|----------|-------|---------|
+| `VITE_OPENROUTER_API_KEY` | `.env` (local), Vercel project settings (production) | OpenRouter API key for AI SOAP note drafting. Get a free key at https://openrouter.ai/keys. Must be set before `npm run dev` or Vercel build — Vite bakes it in at build time. |
 
 ### Prototype-specific decisions logged here
 
