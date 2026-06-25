@@ -13,8 +13,8 @@ import {
 import { cn } from '@/lib/utils'
 import { useApp } from '@/context/AppContext'
 
-// practitionerOnly: hidden in Front Desk mode (not applicable to admin)
-// emphasizeIn: which mode gives this item bolder treatment when not active
+// practitionerOnly: hidden for Front Office role
+// emphasizeIn: which role gives this item bolder treatment when not active
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/patients', label: 'Patients', icon: Users },
@@ -25,10 +25,11 @@ const NAV_ITEMS = [
   { to: '/billing', label: 'Billing', icon: Receipt, emphasizeIn: 'frontdesk' },
 ]
 
-const MODES = [
-  { value: 'frontdesk', label: 'Front Desk' },
-  { value: 'practitioner', label: 'Practitioner' },
-]
+const ROLE_BADGE = {
+  admin: { label: 'Admin · Full Access', className: 'bg-teal-50 text-teal-700' },
+  frontdesk: { label: 'Front Office', className: 'bg-blue-50 text-blue-700' },
+  practitioner: { label: 'Practitioner', className: 'bg-violet-50 text-violet-700' },
+}
 
 const ROLE_FOOTER = {
   admin: { name: 'Admin Account', sub: 'Full Access' },
@@ -37,12 +38,13 @@ const ROLE_FOOTER = {
 }
 
 export default function Sidebar({ onHelpOpen }) {
-  const { viewMode, setViewMode, loggedInRole, logout } = useApp()
+  const { loggedInRole, logout } = useApp()
   const navigate = useNavigate()
   const isAdmin = loggedInRole === 'admin'
+  const isFrontdesk = loggedInRole === 'frontdesk'
 
   const visibleNav = NAV_ITEMS.filter(
-    (item) => isAdmin || !item.practitionerOnly || viewMode === 'practitioner'
+    (item) => !item.practitionerOnly || !isFrontdesk
   )
 
   function handleLogout() {
@@ -50,6 +52,7 @@ export default function Sidebar({ onHelpOpen }) {
     navigate('/login')
   }
 
+  const badge = ROLE_BADGE[loggedInRole] ?? ROLE_BADGE.practitioner
   const footer = ROLE_FOOTER[loggedInRole] ?? ROLE_FOOTER.practitioner
 
   return (
@@ -59,38 +62,16 @@ export default function Sidebar({ onHelpOpen }) {
         <span className="text-lg font-semibold tracking-tight text-teal-700">AccuWorld</span>
       </div>
 
-      {/* Mode toggle — hidden for admin (they always see everything) */}
-      {!isAdmin && (
-        <div className="mx-3 mt-3 mb-1 flex rounded-md border">
-          {MODES.map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => setViewMode(value)}
-              className={cn(
-                'flex-1 rounded-[5px] py-1 text-xs font-medium transition-colors',
-                viewMode === value
-                  ? 'bg-teal-600 text-white'
-                  : 'text-zinc-500 hover:text-zinc-700'
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Admin role badge (replaces toggle) */}
-      {isAdmin && (
-        <div className="mx-3 mt-3 mb-1 rounded-md border bg-teal-50 px-3 py-1.5 text-center">
-          <p className="text-xs font-medium text-teal-700">Admin · Full Access</p>
-        </div>
-      )}
+      {/* Role badge — fixed, not a toggle */}
+      <div className={`mx-3 mt-3 mb-1 rounded-md border px-3 py-1.5 text-center ${badge.className}`}>
+        <p className="text-xs font-medium">{badge.label}</p>
+      </div>
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3">
         <ul className="space-y-0.5 px-3">
           {visibleNav.map(({ to, label, icon: Icon, end, emphasizeIn }) => {
-            const isEmphasized = !isAdmin && emphasizeIn === viewMode
+            const isEmphasized = !isAdmin && emphasizeIn === loggedInRole
             return (
               <li key={to}>
                 <NavLink
