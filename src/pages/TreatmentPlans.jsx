@@ -28,10 +28,11 @@ const EMPTY_PLAN = {
 }
 
 export default function TreatmentPlans() {
-  const { patients, treatmentPlans, appointments, saveTreatmentPlan } = useApp()
+  const { patients, treatmentPlans, appointments, visits, saveTreatmentPlan } = useApp()
   const [showDialog, setShowDialog] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY_PLAN)
+  const [suggestionDismissed, setSuggestionDismissed] = useState(false)
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
@@ -40,6 +41,7 @@ export default function TreatmentPlans() {
   function openNew() {
     setEditing(null)
     setForm(EMPTY_PLAN)
+    setSuggestionDismissed(false)
     setShowDialog(true)
   }
 
@@ -72,6 +74,12 @@ export default function TreatmentPlans() {
   const patientsWithoutPlan = patients.filter(
     (p) => p.status === 'active' && !treatmentPlans.find((tp) => tp.patientId === p.id)
   )
+
+  const dialogLatestVisit = !editing && form.patientId
+    ? [...visits]
+        .filter((v) => v.patientId === form.patientId)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))[0] ?? null
+    : null
 
   return (
     <div className="space-y-5">
@@ -183,6 +191,7 @@ export default function TreatmentPlans() {
                 onClick={() => {
                   setEditing(null)
                   setForm({ ...EMPTY_PLAN, patientId: p.id })
+                  setSuggestionDismissed(false)
                   setShowDialog(true)
                 }}
                 className="rounded-full border px-3 py-1 text-xs hover:bg-zinc-50"
@@ -209,6 +218,33 @@ export default function TreatmentPlans() {
                     <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
                   ))}
                 </Select>
+              </div>
+            )}
+            {dialogLatestVisit && !suggestionDismissed && (
+              <div className="rounded-md border border-teal-200 bg-teal-50 p-3 text-xs">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="font-medium text-teal-800">Suggestions from last visit ({formatDate(dialogLatestVisit.date)})</p>
+                  <button type="button" onClick={() => setSuggestionDismissed(true)} className="text-muted-foreground hover:text-zinc-700">✕</button>
+                </div>
+                {dialogLatestVisit.chiefComplaint && (
+                  <p className="text-teal-700 mb-1"><span className="font-medium">Complaint:</span> {dialogLatestVisit.chiefComplaint}</p>
+                )}
+                {dialogLatestVisit.treatmentStrategy && (
+                  <p className="text-teal-700 mb-2"><span className="font-medium">Strategy:</span> {dialogLatestVisit.treatmentStrategy}</p>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-teal-700 px-2"
+                  onClick={() => {
+                    if (dialogLatestVisit.chiefComplaint) set('primaryComplaint', dialogLatestVisit.chiefComplaint)
+                    if (dialogLatestVisit.treatmentStrategy) set('treatmentGoals', dialogLatestVisit.treatmentStrategy)
+                    setSuggestionDismissed(true)
+                  }}
+                >
+                  Use suggestions →
+                </Button>
               </div>
             )}
             <div className="space-y-1.5">

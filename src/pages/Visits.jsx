@@ -64,7 +64,7 @@ export default function Visits() {
   const navigate = useNavigate()
   const apptId = searchParams.get('appt')
   const patientIdParam = searchParams.get('patient')
-  const { patients, appointments, visits, insuranceProfiles, addVisit, updateVisit, updateAppointment, updateInsurance } = useApp()
+  const { patients, appointments, visits, insuranceProfiles, treatmentPlans, addVisit, updateVisit, updateAppointment, updateInsurance } = useApp()
 
   const appointment = apptId ? appointments.find((a) => a.id === apptId) : null
   const existingVisit = appointment ? visits.find((v) => v.appointmentId === apptId) : null
@@ -75,6 +75,7 @@ export default function Visits() {
     ? patients.find((p) => p.id === patientIdParam)
     : null
   const ins = patient ? insuranceProfiles.find((i) => i.patientId === patient.id) : null
+  const plan = patient ? treatmentPlans.find((tp) => tp.patientId === patient.id) : null
 
   const [form, setForm] = useState({
     visitDate: existingVisit?.date ?? '2026-06-21',
@@ -105,6 +106,7 @@ export default function Visits() {
   const [homeCareHint, setHomeCareHint] = useState(null)
   const [formulaLoading, setFormulaLoading] = useState(false)
   const [formulaSuggestion, setFormulaSuggestion] = useState(null)
+  const [planComplaintDismissed, setPlanComplaintDismissed] = useState(false)
 
   // When navigating from the visit list to a form (same component instance, only search params change),
   // useState initializers don't re-run. This effect syncs form state to the loaded visit.
@@ -515,6 +517,15 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                   rows={2}
                   placeholder="What the patient reports today…"
                 />
+                {!existingVisit && plan?.primaryComplaint && !planComplaintDismissed && !form.chiefComplaint.trim() && (
+                  <div className="flex items-center justify-between rounded-md border border-teal-200 bg-teal-50 px-3 py-2 text-xs">
+                    <span className="text-teal-800">From treatment plan: <span className="font-medium">{plan.primaryComplaint}</span></span>
+                    <div className="flex items-center gap-3 shrink-0 ml-3">
+                      <button type="button" onClick={() => set('chiefComplaint', plan.primaryComplaint)} className="text-teal-700 hover:underline">Use this</button>
+                      <button type="button" onClick={() => setPlanComplaintDismissed(true)} className="text-muted-foreground hover:text-zinc-700">✕</button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">

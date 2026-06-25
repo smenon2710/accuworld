@@ -215,7 +215,7 @@ All backlog items have been implemented. No open backlog items remain.
 
 ---
 
-## Build Status (updated 2026-06-25 — login + role-based access complete)
+## Build Status (updated 2026-06-25 — treatment plan UX improvements)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -266,6 +266,9 @@ All backlog items have been implemented. No open backlog items remain.
 | Suggest Home Care | Visit / Chart → Home Care | "Suggest" button on the Home Care field. Checks `src/data/homeCareSuggestions.js` local keyword map first (15 categories); falls back to OpenRouter if no match. Shows amber hint when complaint is empty or unrecognized. |
 | Suggest Formula | Visit / Chart → Herbal Formula | "Suggest Formula" button. Streams a classical formula name + one-sentence rationale from OpenRouter using the complaint and treatment strategy fields. |
 | Billing payment method + transaction ref | Billing → Mark Paid dialog | Mark Paid dialog extended with payment method dropdown (cash/card/zelle/check/insurance). Conditional reference field appears for zelle/card/check. Optional note field always visible. Invoice table shows method and ref as secondary lines for cash reconciliation. Data model: `paymentMethod`, `transactionRef`, `paymentNote` on invoice. |
+| Missing treatment plan callout | Patient detail | When a patient has no treatment plan, an amber callout is now shown in the main column right after the Insurance card (previously invisible). Includes a "Create Plan" button linking to `/treatment-plans`. |
+| Suggest from last visit in new plan form | Treatment Plans → New Plan dialog | When creating a new plan, a teal suggestion box appears (once a patient is selected) showing their most recent visit's chief complaint and treatment strategy. "Use suggestions →" fills Primary Complaint and Treatment Goals fields. Dismissible with ✕. |
+| Chief complaint hint from treatment plan | Visit / Chart → Subjective | When opening a new chart note for a patient who already has a treatment plan, a teal hint appears below the Chief Complaint field showing the plan's primary complaint. "Use this" fills the field; ✕ dismisses. Only shown while the field is empty. |
 
 ### Bug fixes (2026-06-25)
 
@@ -311,3 +314,6 @@ All backlog items have been implemented. No open backlog items remain.
 - **Billing payment tracking** — invoice data model extended on save with optional `paymentMethod`, `transactionRef`, `paymentNote` fields. `REF_LABEL` constant in `Billing.jsx` maps method → label text. Reference field is only rendered for zelle/card/check; hidden for cash and insurance.
 - **Historical appointment IDs** — `ahist1`–`ahist7` in `seedAppointments` are stub completed appointments that exist solely to back the pain-trend seed visits (v8–v14). They have no `note` text and do not appear on the Schedule (no datetime in the visible prototype window for most of them).
 - **Visit form reinitialization** — `useEffect([existingVisit?.id])` in `Visits.jsx` syncs form state when the loaded visit changes. Safe to depend only on the ID string: changing from undefined → 'v1' fires the effect; re-renders within the same visit do not.
+- **Missing treatment plan callout** — `PatientDetail.jsx` renders an amber callout in place of the silent absence when `plan` is null. Positioned right after the Insurance card so it's the second thing the practitioner sees. Links to `/treatment-plans` where the patient's chip appears in the "patients without a plan" section.
+- **Visit-to-plan suggestions** — `TreatmentPlans.jsx` computes `dialogLatestVisit` (most recent visit for the selected patient) on every render. Suggestion box shown when `!editing && form.patientId && dialogLatestVisit && !suggestionDismissed`. Reset on `openNew()` and on chip-button clicks. Fills `primaryComplaint` from `chiefComplaint` and `treatmentGoals` from `treatmentStrategy`.
+- **Plan-to-visit chief complaint hint** — `Visits.jsx` looks up `treatmentPlans` (added to `useApp()` destructuring) for the current patient. Hint shown when `!existingVisit && plan?.primaryComplaint && !planComplaintDismissed && !form.chiefComplaint.trim()`. Disappears naturally once the practitioner starts typing.

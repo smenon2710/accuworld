@@ -290,7 +290,7 @@ export default function PatientDetail() {
           </Card>
 
           {/* Treatment Plan */}
-          {plan && (
+          {plan ? (
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -321,6 +321,18 @@ export default function PatientDetail() {
                 </div>
               </CardContent>
             </Card>
+          ) : (
+            <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+                <p className="text-sm text-amber-800">No treatment plan on file.</p>
+              </div>
+              <Link to="/treatment-plans">
+                <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
+                  Create Plan
+                </Button>
+              </Link>
+            </div>
           )}
 
           {/* Pain Trend */}
