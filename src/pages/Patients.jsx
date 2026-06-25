@@ -74,7 +74,13 @@ export default function Patients() {
       {filtered.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
           <p className="text-sm text-muted-foreground">
-            {search ? `No patients match "${search}".` : 'No patients yet. Add your first patient above.'}
+            {search
+              ? `No patients match "${search}".`
+              : statusFilter === 'inactive'
+              ? 'No inactive patients.'
+              : statusFilter === 'active'
+              ? 'No active patients.'
+              : 'No patients yet. Add your first patient above.'}
           </p>
         </div>
       ) : (

@@ -501,6 +501,9 @@ export default function PatientDetail() {
                     <p>{patient.notes}</p>
                   </div>
                 )}
+                {!patient.allergies && !patient.medications && !patient.medicalHistory && !patient.emergencyContact?.name && !patient.notes && (
+                  <p className="text-muted-foreground">No additional info recorded. Edit the patient to add details.</p>
+                )}
               </div>
             )}
           </Card>
