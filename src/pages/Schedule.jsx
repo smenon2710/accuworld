@@ -121,7 +121,8 @@ function MonthGrid({ currentDate, appointments, patientMap, onDayClick, onApptCl
 }
 
 export default function Schedule() {
-  const { patients, appointments, updateAppointment } = useApp()
+  const { patients, appointments, updateAppointment, loggedInRole } = useApp()
+  const canChart = loggedInRole !== 'frontdesk'
   const navigate = useNavigate()
   const [view, setView] = useState('week')
   const [currentDate, setCurrentDate] = useState(TODAY)
@@ -164,8 +165,7 @@ export default function Schedule() {
 
   function handleComplete(apptId) {
     updateAppointment(apptId, { status: APPOINTMENT_STATUS.COMPLETED })
-    // Decrement insurance visits — handled by visiting the chart
-    navigate(`/visits?appt=${apptId}`)
+    if (canChart) navigate(`/visits?appt=${apptId}`)
   }
 
   function handleNoShow(apptId) {
@@ -398,7 +398,7 @@ export default function Schedule() {
                           onClick={() => handleComplete(a.id)}
                         >
                           <CheckCircle2 className="h-3.5 w-3.5" />
-                          Complete + Chart
+                          {canChart ? 'Complete + Chart' : 'Mark Complete'}
                         </Button>
                         <Button
                           size="sm"
@@ -410,7 +410,7 @@ export default function Schedule() {
                         </Button>
                       </div>
                     )}
-                    {a.status === APPOINTMENT_STATUS.COMPLETED && (
+                    {a.status === APPOINTMENT_STATUS.COMPLETED && canChart && (
                       <Button
                         size="sm"
                         variant="outline"

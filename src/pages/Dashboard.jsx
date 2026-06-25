@@ -43,7 +43,8 @@ function appointmentTypeLabel(type) {
 }
 
 export default function Dashboard() {
-  const { patients, insuranceProfiles, appointments, invoices, updateAppointment } = useApp()
+  const { patients, insuranceProfiles, appointments, invoices, updateAppointment, loggedInRole } = useApp()
+  const canChart = loggedInRole !== 'frontdesk'
   const navigate = useNavigate()
   const [verifyTarget, setVerifyTarget] = useState(null)
   const [showAddPatient, setShowAddPatient] = useState(false)
@@ -229,13 +230,15 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center gap-2">
                         {ins && <InsuranceBadge status={ins.coverageStatus} />}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => navigate(`/visits?appt=${a.id}`)}
-                        >
-                          Chart
-                        </Button>
+                        {canChart && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => navigate(`/visits?appt=${a.id}`)}
+                          >
+                            Chart
+                          </Button>
+                        )}
                       </div>
                     </div>
                   )
