@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AppProvider } from '@/context/AppContext'
 import Layout from '@/components/layout/Layout'
+import Login from '@/pages/Login'
 import Dashboard from '@/pages/Dashboard'
 import Patients from '@/pages/Patients'
 import PatientDetail from '@/pages/PatientDetail'
@@ -15,6 +16,7 @@ export default function App() {
     <AppProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/login" element={<Login />} />
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/patients" element={<Patients />} />

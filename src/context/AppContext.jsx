@@ -28,6 +28,7 @@ function saveToStorage(key, value) {
 }
 
 export function AppProvider({ children }) {
+  const [loggedInRole, setLoggedInRoleState] = useState(() => loadFromStorage('aw_role', null))
   const [viewMode, setViewModeState] = useState(() => loadFromStorage('aw_viewMode', 'practitioner'))
   const [patients, setPatients] = useState(() => loadFromStorage('aw_patients', seedPatients))
   const [insuranceProfiles, setInsuranceProfiles] = useState(() =>
@@ -45,6 +46,19 @@ export function AppProvider({ children }) {
   const setViewMode = useCallback((mode) => {
     setViewModeState(mode)
     saveToStorage('aw_viewMode', mode)
+  }, [])
+
+  const loginAs = useCallback((role) => {
+    setLoggedInRoleState(role)
+    saveToStorage('aw_role', role)
+    const mode = role === 'frontdesk' ? 'frontdesk' : 'practitioner'
+    setViewModeState(mode)
+    saveToStorage('aw_viewMode', mode)
+  }, [])
+
+  const logout = useCallback(() => {
+    setLoggedInRoleState(null)
+    localStorage.removeItem('aw_role')
   }, [])
 
   // ── Patients ──────────────────────────────────────────────────────────────
@@ -163,11 +177,15 @@ export function AppProvider({ children }) {
     setTreatmentPlans(seedTreatmentPlans)
     setInvoices(seedInvoices)
     setViewModeState('practitioner')
+    setLoggedInRoleState(null)
     localStorage.clear()
     console.log('[AppContext] reset to seed data')
   }, [])
 
   const value = {
+    loggedInRole,
+    loginAs,
+    logout,
     viewMode,
     setViewMode,
     patients,

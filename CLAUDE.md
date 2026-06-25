@@ -209,13 +209,13 @@ A slice is complete only when:
 
 ---
 
-## Backlog — all items shipped (2026-06-24)
+## Backlog — all items shipped (2026-06-25)
 
-All backlog items from the 2026-06-23 planning session have been implemented. No open backlog items remain.
+All backlog items have been implemented. No open backlog items remain.
 
 ---
 
-## Build Status (updated 2026-06-24 — all slices + all backlog items complete)
+## Build Status (updated 2026-06-25)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -255,8 +255,10 @@ All backlog items from the 2026-06-23 planning session have been implemented. No
 
 | Feature | Where | Notes |
 |---------|-------|-------|
+| Login / welcome page | `/login` (new) | Three role cards (Admin, Front Office, Practitioner) with test credentials displayed. Clicking "Sign in as [Role]" sets `loggedInRole` in AppContext and navigates to Dashboard. No real auth — cosmetic only. Layout redirects to `/login` when `loggedInRole` is null. |
+| Role-based nav | Sidebar | Admin sees all 7 nav items + "Admin · Full Access" badge (mode toggle hidden). Front Office hides Visit/Chart and Treatment Plans; Practitioner shows all items. All roles show role name in sidebar footer + logout button (↪) that clears `loggedInRole` and returns to `/login`. |
 | Standalone visit notes | Patient detail → Visit History | "New Note" button on each patient's Visit History card. Creates a visit not tied to an appointment (`/visits?patient=<id>`). Date picker defaults to prototype today. No appointment status change or insurance decrement. |
-| View mode toggle (Front Desk / Practitioner) | Sidebar | Segmented pill below the logo. Stored in AppContext + `aw_viewMode` localStorage key. Front Desk hides Visit/Chart and Treatment Plans; emphasizes Schedule, Insurance, Billing with teal icon + bold text. Practitioner restores all items with emphasis on Visit/Chart. Cosmetic only — no auth, no roles. |
+| View mode toggle (Front Desk / Practitioner) | Sidebar | Segmented pill below the logo. Stored in AppContext + `aw_viewMode` localStorage key. Front Desk hides Visit/Chart and Treatment Plans; emphasizes Schedule, Insurance, Billing with teal icon + bold text. Practitioner restores all items with emphasis on Visit/Chart. Cosmetic only — shown only for Front Office and Practitioner logins (hidden for Admin). |
 | AI SOAP note drafting | Visit / Chart | "Draft with AI" button in the SOAP Note card header. Streams a TCM-accurate SOAP note via OpenRouter (`openrouter/free` — free models only). Requires `VITE_OPENROUTER_API_KEY` in `.env` (local) and Vercel environment variables (production). Graceful fallback: restores the SOAP template with an amber error banner if the key is missing or the call fails. Tagged with `HTTP-Referer: https://accuworld.vercel.app` and `X-Title: AccuWorld - SOAP Note Drafting` for OpenRouter activity dashboard. |
 | Suggest Points feedback | Visit / Chart | "Suggest Points" button now shows an amber hint when the complaint field is empty or contains no recognizable keyword, guiding the practitioner toward supported terms. Previously silent on no-match. |
 | Auto-fill O: section | Visit / Chart | "Auto-fill O:" button (Wand2 icon) in the Objective card header. Composes a one-line objective string from the pulse and tongue dropdowns and injects it into the O: line of the SOAP note. No AI call — instant local logic. |
@@ -292,7 +294,9 @@ All backlog items from the 2026-06-23 planning session have been implemented. No
 - **Month calendar** — `MonthGrid` is a standalone function component in `Schedule.jsx` (not a separate file) because it shares `STATUS_COLOR` and `TODAY` constants with no other consumers. Clicking any day cell switches view to 'day' for that date.
 - **Help drawer state lives in Layout.jsx** — `showHelp` is passed down as `onHelpOpen` prop to Sidebar. The drawer itself renders at the Layout level so its fixed overlay covers the full viewport. Demo step checkboxes reset when the drawer is closed (local state in HelpDrawer).
 - **Standalone visit notes** — `Visits.jsx` handles both `?appt=<id>` (appointment-linked) and `?patient=<id>` (standalone) flows. Standalone notes skip appointment status change and insurance decrement. Date defaults to prototype today but is editable via a date input.
-- **View mode toggle** — `viewMode` ('practitioner' | 'frontdesk') lives in AppContext, persisted to `aw_viewMode`. `Sidebar.jsx` reads it to filter nav items (`practitionerOnly` items hidden in Front Desk) and apply emphasis (`emphasizeIn` items get teal icon + bold weight when that mode is active). No auth or real roles — cosmetic only.
+- **View mode toggle** — `viewMode` ('practitioner' | 'frontdesk') lives in AppContext, persisted to `aw_viewMode`. `Sidebar.jsx` reads it to filter nav items (`practitionerOnly` items hidden in Front Desk) and apply emphasis (`emphasizeIn` items get teal icon + bold weight when that mode is active). Toggle is hidden when `loggedInRole === 'admin'` — admin sees all nav items regardless of viewMode.
+- **Login / welcome page** — `src/pages/Login.jsx`. Three role cards with test credentials (all use `Demo@1234`): Admin (`admin@accuworld.app`), Front Office (`frontoffice@accuworld.app`), Practitioner (`drpriya@accuworld.app`). `loginAs(role)` in AppContext sets `loggedInRole` (persisted to `aw_role`) and sets `viewMode` accordingly (frontdesk → 'frontdesk'; admin/practitioner → 'practitioner'). `logout()` clears `loggedInRole`. Layout redirects unauthenticated requests to `/login`. `resetToSeedData()` also clears the role.
+- **Admin role** — `loggedInRole === 'admin'` causes Sidebar to show all 7 nav items (no `practitionerOnly` filtering), replace the mode toggle with an "Admin · Full Access" badge, and show "Admin Account / Full Access" in the footer.
 - **AI charting suggest buttons** — all four suggestion features in `Visits.jsx` use a shared `streamOpenRouter()` module-level helper. Auto-fill O: is pure local logic (no API). Suggest Home Care checks `src/data/homeCareSuggestions.js` (15 keyword categories) before falling back to OpenRouter. Suggest Diagnosis and Suggest Formula always call OpenRouter. All AI buttons are gracefully degraded — show a static hint if the API key is missing.
 - **homeCareSuggestions.js** — new file at `src/data/homeCareSuggestions.js`, 15 complaint categories (back pain, sciatica, headache, neck, shoulder, knee, plantar fasciitis, insomnia, anxiety, digestion, fatigue, fibromyalgia, menstrual, fertility, skin). Each entry has a `keywords` array and 3 `suggestions` strings. `suggestHomeCareForComplaint(complaint)` returns an array of suggestions or `[]` on no match.
 - **Billing payment tracking** — invoice data model extended on save with optional `paymentMethod`, `transactionRef`, `paymentNote` fields. `REF_LABEL` constant in `Billing.jsx` maps method → label text. Reference field is only rendered for zelle/card/check; hidden for cash and insurance.

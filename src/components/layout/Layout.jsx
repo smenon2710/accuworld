@@ -1,11 +1,16 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, Navigate } from 'react-router-dom'
+import { useApp } from '@/context/AppContext'
 import Sidebar from './Sidebar'
 import DemoBanner from './DemoBanner'
 import HelpDrawer from './HelpDrawer'
 
 export default function Layout() {
+  const { loggedInRole } = useApp()
   const [showHelp, setShowHelp] = useState(false)
+
+  if (!loggedInRole) return <Navigate to="/login" replace />
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar onHelpOpen={() => setShowHelp(true)} />

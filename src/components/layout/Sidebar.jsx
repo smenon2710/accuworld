@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Users,
@@ -8,11 +8,12 @@ import {
   ClipboardList,
   Receipt,
   HelpCircle,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/context/AppContext'
 
-// practitionerOnly: hidden in Front Desk mode
+// practitionerOnly: hidden in Front Desk mode (not applicable to admin)
 // emphasizeIn: which mode gives this item bolder treatment when not active
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -29,12 +30,27 @@ const MODES = [
   { value: 'practitioner', label: 'Practitioner' },
 ]
 
+const ROLE_FOOTER = {
+  admin: { name: 'Admin Account', sub: 'Full Access' },
+  frontdesk: { name: 'Front Office', sub: 'AccuWorld Clinic' },
+  practitioner: { name: 'Dr. Priya Sharma, L.Ac.', sub: 'Acupuncture & TCM' },
+}
+
 export default function Sidebar({ onHelpOpen }) {
-  const { viewMode, setViewMode } = useApp()
+  const { viewMode, setViewMode, loggedInRole, logout } = useApp()
+  const navigate = useNavigate()
+  const isAdmin = loggedInRole === 'admin'
 
   const visibleNav = NAV_ITEMS.filter(
-    (item) => !item.practitionerOnly || viewMode === 'practitioner'
+    (item) => isAdmin || !item.practitionerOnly || viewMode === 'practitioner'
   )
+
+  function handleLogout() {
+    logout()
+    navigate('/login')
+  }
+
+  const footer = ROLE_FOOTER[loggedInRole] ?? ROLE_FOOTER.practitioner
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 flex w-56 flex-col border-r bg-white">
@@ -43,29 +59,38 @@ export default function Sidebar({ onHelpOpen }) {
         <span className="text-lg font-semibold tracking-tight text-teal-700">AccuWorld</span>
       </div>
 
-      {/* Mode toggle */}
-      <div className="mx-3 mt-3 mb-1 flex rounded-md border">
-        {MODES.map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => setViewMode(value)}
-            className={cn(
-              'flex-1 rounded-[5px] py-1 text-xs font-medium transition-colors',
-              viewMode === value
-                ? 'bg-teal-600 text-white'
-                : 'text-zinc-500 hover:text-zinc-700'
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* Mode toggle — hidden for admin (they always see everything) */}
+      {!isAdmin && (
+        <div className="mx-3 mt-3 mb-1 flex rounded-md border">
+          {MODES.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setViewMode(value)}
+              className={cn(
+                'flex-1 rounded-[5px] py-1 text-xs font-medium transition-colors',
+                viewMode === value
+                  ? 'bg-teal-600 text-white'
+                  : 'text-zinc-500 hover:text-zinc-700'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Admin role badge (replaces toggle) */}
+      {isAdmin && (
+        <div className="mx-3 mt-3 mb-1 rounded-md border bg-teal-50 px-3 py-1.5 text-center">
+          <p className="text-xs font-medium text-teal-700">Admin · Full Access</p>
+        </div>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3">
         <ul className="space-y-0.5 px-3">
           {visibleNav.map(({ to, label, icon: Icon, end, emphasizeIn }) => {
-            const isEmphasized = emphasizeIn === viewMode
+            const isEmphasized = !isAdmin && emphasizeIn === viewMode
             return (
               <li key={to}>
                 <NavLink
@@ -105,10 +130,19 @@ export default function Sidebar({ onHelpOpen }) {
         Help &amp; Demo Guide
       </button>
 
-      {/* Practitioner */}
-      <div className="border-t px-5 py-3">
-        <p className="text-xs font-medium text-zinc-900">Dr. Priya Sharma, L.Ac.</p>
-        <p className="text-xs text-muted-foreground">Acupuncture &amp; TCM</p>
+      {/* Footer — role info + logout */}
+      <div className="border-t px-5 py-3 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-medium text-zinc-900">{footer.name}</p>
+          <p className="text-xs text-muted-foreground">{footer.sub}</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          title="Sign out"
+          className="rounded-md p-1.5 text-muted-foreground hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+        </button>
       </div>
     </aside>
   )
