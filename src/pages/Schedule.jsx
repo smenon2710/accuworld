@@ -165,7 +165,6 @@ export default function Schedule() {
 
   function handleComplete(apptId) {
     updateAppointment(apptId, { status: APPOINTMENT_STATUS.COMPLETED })
-    if (canChart) navigate(`/visits?appt=${apptId}`)
   }
 
   function handleNoShow(apptId) {
@@ -392,14 +391,26 @@ export default function Schedule() {
                     </div>
                     {a.status === APPOINTMENT_STATUS.CONFIRMED && (
                       <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          className="flex-1 text-xs"
-                          onClick={() => handleComplete(a.id)}
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          {canChart ? 'Complete + Chart' : 'Mark Complete'}
-                        </Button>
+                        {!canChart && (
+                          <Button
+                            size="sm"
+                            className="flex-1 text-xs"
+                            onClick={() => handleComplete(a.id)}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Mark Complete
+                          </Button>
+                        )}
+                        {canChart && (
+                          <Button
+                            size="sm"
+                            className="flex-1 text-xs"
+                            onClick={() => navigate(`/visits?appt=${a.id}`)}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Chart
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
