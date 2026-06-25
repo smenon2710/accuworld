@@ -23,7 +23,7 @@ export default function NewAppointmentDialog({ open, onOpenChange, defaultDate, 
   const { patients, appointments, addAppointment } = useApp()
   const [form, setForm] = useState({
     patientId: defaultPatientId ?? '',
-    date: defaultDate ?? format(new Date(), 'yyyy-MM-dd'),
+    date: defaultDate ?? '2026-06-21',
     time: '09:00',
     durationMin: 45,
     type: APPOINTMENT_TYPE.FOLLOWUP,
