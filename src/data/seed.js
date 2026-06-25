@@ -1,5 +1,18 @@
 // All prototype data lives here. No real PHI — invented seed data only.
 
+// Date helpers — all seed dates are relative to today so demos always look current
+function offsetDate(days) {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+function offsetDatetime(days, time) {
+  return `${offsetDate(days)}T${time}`
+}
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 export const PAYERS = {
@@ -340,14 +353,13 @@ export const seedInsuranceProfiles = [
 ]
 
 // ─── Appointments ─────────────────────────────────────────────────────────────
-// Today = 2026-06-21
 
 export const seedAppointments = [
   // Today's confirmed appointments
   {
     id: 'a1',
     patientId: 'p2',
-    datetime: '2026-06-21T09:00:00',
+    datetime: offsetDatetime(0, '09:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.CONFIRMED,
@@ -357,7 +369,7 @@ export const seedAppointments = [
   {
     id: 'a2',
     patientId: 'p1',
-    datetime: '2026-06-21T10:00:00',
+    datetime: offsetDatetime(0, '10:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.CONFIRMED,
@@ -367,7 +379,7 @@ export const seedAppointments = [
   {
     id: 'a3',
     patientId: 'p6',
-    datetime: '2026-06-21T11:30:00',
+    datetime: offsetDatetime(0, '11:30:00'),
     durationMin: 60,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.CONFIRMED,
@@ -377,7 +389,7 @@ export const seedAppointments = [
   {
     id: 'a4',
     patientId: 'p4',
-    datetime: '2026-06-21T14:00:00',
+    datetime: offsetDatetime(0, '14:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.CONFIRMED,
@@ -389,7 +401,7 @@ export const seedAppointments = [
   {
     id: 'a5',
     patientId: 'p3',
-    datetime: '2026-06-23T10:00:00',
+    datetime: offsetDatetime(2, '10:00:00'),
     durationMin: 60,
     type: APPOINTMENT_TYPE.INITIAL,
     status: APPOINTMENT_STATUS.REQUESTED,
@@ -399,7 +411,7 @@ export const seedAppointments = [
   {
     id: 'a6',
     patientId: 'p8',
-    datetime: '2026-06-24T15:00:00',
+    datetime: offsetDatetime(3, '15:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.REQUESTED,
@@ -409,7 +421,7 @@ export const seedAppointments = [
   {
     id: 'a7',
     patientId: 'p5',
-    datetime: '2026-06-25T09:00:00',
+    datetime: offsetDatetime(4, '09:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.REQUESTED,
@@ -419,7 +431,7 @@ export const seedAppointments = [
   {
     id: 'a8',
     patientId: 'p7',
-    datetime: '2026-06-26T13:00:00',
+    datetime: offsetDatetime(5, '13:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.WELLNESS,
     status: APPOINTMENT_STATUS.REQUESTED,
@@ -431,7 +443,7 @@ export const seedAppointments = [
   {
     id: 'a9',
     patientId: 'p1',
-    datetime: '2026-06-07T10:00:00',
+    datetime: offsetDatetime(-14, '10:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.COMPLETED,
@@ -441,7 +453,7 @@ export const seedAppointments = [
   {
     id: 'a10',
     patientId: 'p2',
-    datetime: '2026-06-08T09:00:00',
+    datetime: offsetDatetime(-13, '09:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.COMPLETED,
@@ -451,7 +463,7 @@ export const seedAppointments = [
   {
     id: 'a11',
     patientId: 'p6',
-    datetime: '2026-06-10T11:30:00',
+    datetime: offsetDatetime(-11, '11:30:00'),
     durationMin: 60,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.COMPLETED,
@@ -461,7 +473,7 @@ export const seedAppointments = [
   {
     id: 'a12',
     patientId: 'p4',
-    datetime: '2026-06-05T14:00:00',
+    datetime: offsetDatetime(-16, '14:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.COMPLETED,
@@ -471,7 +483,7 @@ export const seedAppointments = [
   {
     id: 'a13',
     patientId: 'p7',
-    datetime: '2026-06-07T13:00:00',
+    datetime: offsetDatetime(-14, '13:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.WELLNESS,
     status: APPOINTMENT_STATUS.COMPLETED,
@@ -481,7 +493,7 @@ export const seedAppointments = [
   {
     id: 'a14',
     patientId: 'p8',
-    datetime: '2026-06-12T15:00:00',
+    datetime: offsetDatetime(-9, '15:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.COMPLETED,
@@ -491,7 +503,7 @@ export const seedAppointments = [
   {
     id: 'a15',
     patientId: 'p5',
-    datetime: '2026-05-20T09:00:00',
+    datetime: offsetDatetime(-32, '09:00:00'),
     durationMin: 45,
     type: APPOINTMENT_TYPE.FOLLOWUP,
     status: APPOINTMENT_STATUS.COMPLETED,
@@ -499,19 +511,19 @@ export const seedAppointments = [
     note: 'Headaches significantly reduced.',
   },
   // Historical appointments — referenced by pain-trend seed visits (v8–v14)
-  { id: 'ahist1', patientId: 'p1', datetime: '2026-01-20T10:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
-  { id: 'ahist2', patientId: 'p1', datetime: '2026-02-17T10:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
-  { id: 'ahist3', patientId: 'p1', datetime: '2026-03-24T10:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
-  { id: 'ahist4', patientId: 'p1', datetime: '2026-05-05T10:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
-  { id: 'ahist5', patientId: 'p2', datetime: '2025-12-08T09:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.PHONE, note: '' },
-  { id: 'ahist6', patientId: 'p2', datetime: '2026-01-19T09:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.PHONE, note: '' },
-  { id: 'ahist7', patientId: 'p2', datetime: '2026-03-09T09:00:00', durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.PHONE, note: '' },
+  { id: 'ahist1', patientId: 'p1', datetime: offsetDatetime(-152, '10:00:00'), durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
+  { id: 'ahist2', patientId: 'p1', datetime: offsetDatetime(-124, '10:00:00'), durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
+  { id: 'ahist3', patientId: 'p1', datetime: offsetDatetime(-89, '10:00:00'), durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
+  { id: 'ahist4', patientId: 'p1', datetime: offsetDatetime(-47, '10:00:00'), durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.TEXT, note: '' },
+  { id: 'ahist5', patientId: 'p2', datetime: offsetDatetime(-199, '09:00:00'), durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.PHONE, note: '' },
+  { id: 'ahist6', patientId: 'p2', datetime: offsetDatetime(-157, '09:00:00'), durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.PHONE, note: '' },
+  { id: 'ahist7', patientId: 'p2', datetime: offsetDatetime(-108, '09:00:00'), durationMin: 45, type: APPOINTMENT_TYPE.FOLLOWUP, status: APPOINTMENT_STATUS.COMPLETED, source: APPOINTMENT_SOURCE.PHONE, note: '' },
 
   // No-show — for follow-up queue
   {
     id: 'a16',
     patientId: 'p3',
-    datetime: '2026-06-15T10:00:00',
+    datetime: offsetDatetime(-6, '10:00:00'),
     durationMin: 60,
     type: APPOINTMENT_TYPE.INITIAL,
     status: APPOINTMENT_STATUS.NO_SHOW,
@@ -527,7 +539,7 @@ export const seedVisits = [
     id: 'v1',
     appointmentId: 'a9',
     patientId: 'p1',
-    date: '2026-06-07',
+    date: offsetDate(-14),
     chiefComplaint: 'Lower back pain, radiating to left hip. Reports 6/10 pain.',
     painLevel: 6,
     pulseRate: 'Normal',
@@ -546,7 +558,7 @@ export const seedVisits = [
     id: 'v2',
     appointmentId: 'a10',
     patientId: 'p2',
-    date: '2026-06-08',
+    date: offsetDate(-13),
     chiefComplaint: 'Right leg sciatica. Burning sensation down posterior thigh. 4/10 today.',
     painLevel: 4,
     pulseRate: 'Slow',
@@ -565,7 +577,7 @@ export const seedVisits = [
     id: 'v3',
     appointmentId: 'a11',
     patientId: 'p6',
-    date: '2026-06-10',
+    date: offsetDate(-11),
     chiefComplaint: 'Right buttock pain after 5K race last weekend. 5/10.',
     painLevel: 5,
     pulseRate: 'Rapid',
@@ -584,7 +596,7 @@ export const seedVisits = [
     id: 'v4',
     appointmentId: 'a12',
     patientId: 'p4',
-    date: '2026-06-05',
+    date: offsetDate(-16),
     chiefComplaint: 'Heel and arch pain, both feet. Worse in morning. 5/10.',
     painLevel: 5,
     pulseRate: 'Normal',
@@ -603,7 +615,7 @@ export const seedVisits = [
     id: 'v5',
     appointmentId: 'a13',
     patientId: 'p7',
-    date: '2026-06-07',
+    date: offsetDate(-14),
     chiefComplaint: 'Diffuse muscle aching, fatigue. 4/10 overall today.',
     painLevel: 4,
     pulseRate: 'Slow',
@@ -622,7 +634,7 @@ export const seedVisits = [
     id: 'v6',
     appointmentId: 'a14',
     patientId: 'p8',
-    date: '2026-06-12',
+    date: offsetDate(-9),
     chiefComplaint: 'Acute low back strain after lifting at gym. 7/10.',
     painLevel: 7,
     pulseRate: 'Rapid',
@@ -641,7 +653,7 @@ export const seedVisits = [
     id: 'v7',
     appointmentId: 'a15',
     patientId: 'p5',
-    date: '2026-05-20',
+    date: offsetDate(-32),
     chiefComplaint: 'Tension headache, bilateral temporal. 5/10.',
     painLevel: 5,
     pulseRate: 'Normal',
@@ -662,7 +674,7 @@ export const seedVisits = [
     id: 'v8',
     appointmentId: 'ahist1',
     patientId: 'p1',
-    date: '2026-01-20',
+    date: offsetDate(-152),
     chiefComplaint: 'Acute lumbar pain with left hip radiation. First visit. 8/10.',
     painLevel: 8,
     pulseRate: 'Rapid',
@@ -681,7 +693,7 @@ export const seedVisits = [
     id: 'v9',
     appointmentId: 'ahist2',
     patientId: 'p1',
-    date: '2026-02-17',
+    date: offsetDate(-124),
     chiefComplaint: 'Lumbar pain improving but still significant. 7/10.',
     painLevel: 7,
     pulseRate: 'Normal',
@@ -700,7 +712,7 @@ export const seedVisits = [
     id: 'v10',
     appointmentId: 'ahist3',
     patientId: 'p1',
-    date: '2026-03-24',
+    date: offsetDate(-89),
     chiefComplaint: 'Lower back pain 6/10. Hip radiation less frequent.',
     painLevel: 6,
     pulseRate: 'Normal',
@@ -719,7 +731,7 @@ export const seedVisits = [
     id: 'v11',
     appointmentId: 'ahist4',
     patientId: 'p1',
-    date: '2026-05-05',
+    date: offsetDate(-47),
     chiefComplaint: 'Lumbar pain 5/10. Good week overall.',
     painLevel: 5,
     pulseRate: 'Normal',
@@ -740,7 +752,7 @@ export const seedVisits = [
     id: 'v12',
     appointmentId: 'ahist5',
     patientId: 'p2',
-    date: '2025-12-08',
+    date: offsetDate(-199),
     chiefComplaint: 'Right leg sciatica, burning posterior thigh. First visit. 8/10.',
     painLevel: 8,
     pulseRate: 'Slow',
@@ -759,7 +771,7 @@ export const seedVisits = [
     id: 'v13',
     appointmentId: 'ahist6',
     patientId: 'p2',
-    date: '2026-01-19',
+    date: offsetDate(-157),
     chiefComplaint: 'Sciatica improving. Burning reduced. 6/10.',
     painLevel: 6,
     pulseRate: 'Slow',
@@ -778,7 +790,7 @@ export const seedVisits = [
     id: 'v14',
     appointmentId: 'ahist7',
     patientId: 'p2',
-    date: '2026-03-09',
+    date: offsetDate(-108),
     chiefComplaint: 'Right sciatica 5/10. Occasional flare after sitting long.',
     painLevel: 5,
     pulseRate: 'Slow',
@@ -806,8 +818,8 @@ export const seedTreatmentPlans = [
     frequencyRecommendation: '2x/week for 4 weeks, then 1x/week for 4 weeks, then monthly maintenance',
     expectedSessions: 20,
     progressNotes: 'Excellent progress. Pain reduced from 7/10 to 4/10 over 10 visits. Full ROM improving.',
-    createdAt: '2026-01-20',
-    updatedAt: '2026-06-07',
+    createdAt: offsetDate(-152),
+    updatedAt: offsetDate(-14),
   },
   {
     id: 'tp2',
@@ -817,8 +829,8 @@ export const seedTreatmentPlans = [
     frequencyRecommendation: '2x/week for 6 weeks, then reassess',
     expectedSessions: 15,
     progressNotes: 'Pain decreased from 8/10 to 4/10. Patient reports sleeping better. Near discharge.',
-    createdAt: '2025-12-05',
-    updatedAt: '2026-06-08',
+    createdAt: offsetDate(-199),
+    updatedAt: offsetDate(-13),
   },
   {
     id: 'tp3',
@@ -828,8 +840,8 @@ export const seedTreatmentPlans = [
     frequencyRecommendation: '1–2x/week during active treatment, monthly maintenance during race season',
     expectedSessions: 12,
     progressNotes: 'Good response to cupping and acupuncture. Managed two races this cycle.',
-    createdAt: '2026-02-14',
-    updatedAt: '2026-06-10',
+    createdAt: offsetDate(-130),
+    updatedAt: offsetDate(-11),
   },
   {
     id: 'tp4',
@@ -839,8 +851,8 @@ export const seedTreatmentPlans = [
     frequencyRecommendation: 'Weekly for 8 weeks, then biweekly maintenance',
     expectedSessions: 12,
     progressNotes: 'Self-pay patient. Consistent improvement each visit. Morning pain 50% better.',
-    createdAt: '2026-03-01',
-    updatedAt: '2026-06-05',
+    createdAt: offsetDate(-112),
+    updatedAt: offsetDate(-16),
   },
   {
     id: 'tp5',
@@ -850,8 +862,8 @@ export const seedTreatmentPlans = [
     frequencyRecommendation: 'Biweekly maintenance — ongoing',
     expectedSessions: 24,
     progressNotes: 'Chronic condition, long-term management. Responding well to combined moxa + cupping protocol.',
-    createdAt: '2025-09-10',
-    updatedAt: '2026-06-07',
+    createdAt: offsetDate(-288),
+    updatedAt: offsetDate(-14),
   },
   {
     id: 'tp6',
@@ -861,8 +873,8 @@ export const seedTreatmentPlans = [
     frequencyRecommendation: '2x/week for 3 weeks, then reassess',
     expectedSessions: 6,
     progressNotes: 'Acute presentation. Responding quickly — 7/10 to expected 3-4/10 after 2 visits.',
-    createdAt: '2026-06-05',
-    updatedAt: '2026-06-12',
+    createdAt: offsetDate(-16),
+    updatedAt: offsetDate(-9),
   },
 ]
 
@@ -873,7 +885,7 @@ export const seedInvoices = [
     id: 'inv1',
     patientId: 'p1',
     visitId: 'v1',
-    date: '2026-06-07',
+    date: offsetDate(-14),
     lineItems: [
       { description: 'Acupuncture Initial — 1st 15 min', cptCode: '97810', units: 1, amount: 80 },
       { description: 'Acupuncture Add-on — ea addl 15 min', cptCode: '97811', units: 2, amount: 40 },
@@ -887,7 +899,7 @@ export const seedInvoices = [
     id: 'inv2',
     patientId: 'p2',
     visitId: 'v2',
-    date: '2026-06-08',
+    date: offsetDate(-13),
     lineItems: [
       { description: 'Acupuncture Initial — 1st 15 min', cptCode: '97810', units: 1, amount: 80 },
       { description: 'Acupuncture Add-on — ea addl 15 min', cptCode: '97811', units: 1, amount: 20 },
@@ -901,7 +913,7 @@ export const seedInvoices = [
     id: 'inv3',
     patientId: 'p6',
     visitId: 'v3',
-    date: '2026-06-10',
+    date: offsetDate(-11),
     lineItems: [
       { description: 'Acupuncture Initial — 1st 15 min', cptCode: '97810', units: 1, amount: 80 },
       { description: 'Cupping Therapy', cptCode: '97140', units: 1, amount: 30 },
@@ -915,7 +927,7 @@ export const seedInvoices = [
     id: 'inv4',
     patientId: 'p4',
     visitId: 'v4',
-    date: '2026-06-05',
+    date: offsetDate(-16),
     lineItems: [
       { description: 'Acupuncture — Self Pay', cptCode: '97810', units: 1, amount: 80 },
     ],
@@ -929,7 +941,7 @@ export const seedInvoices = [
     id: 'inv5',
     patientId: 'p7',
     visitId: 'v5',
-    date: '2026-06-07',
+    date: offsetDate(-14),
     lineItems: [
       { description: 'Acupuncture — Self Pay', cptCode: '97810', units: 1, amount: 80 },
     ],
@@ -942,7 +954,7 @@ export const seedInvoices = [
     id: 'inv6',
     patientId: 'p8',
     visitId: 'v6',
-    date: '2026-06-12',
+    date: offsetDate(-9),
     lineItems: [
       { description: 'Acupuncture Initial — 1st 15 min', cptCode: '97810', units: 1, amount: 80 },
       { description: 'E-Stim', cptCode: '97813', units: 1, amount: 40 },
@@ -956,7 +968,7 @@ export const seedInvoices = [
     id: 'inv7',
     patientId: 'p5',
     visitId: 'v7',
-    date: '2026-05-20',
+    date: offsetDate(-32),
     lineItems: [
       { description: 'Acupuncture — Self Pay', cptCode: '97810', units: 1, amount: 80 },
     ],

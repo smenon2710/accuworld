@@ -13,7 +13,7 @@ import MarkVerifiedDialog from '@/components/insurance/MarkVerifiedDialog'
 import AddPatientDialog from '@/components/patients/AddPatientDialog'
 import { COVERAGE_STATUS, APPOINTMENT_STATUS, APPOINTMENT_TYPE, SELF_PAY_RATE } from '@/data/seed'
 
-const TODAY = '2026-06-21' // Prototype fixed "today"
+const TODAY = format(new Date(), 'yyyy-MM-dd')
 
 function formatTime(dt) {
   return format(new Date(dt), 'h:mm a')
@@ -85,7 +85,7 @@ export default function Dashboard() {
 
   const followUpQueue = Object.entries(lastVisitByPatient)
     .map(([patientId, appt]) => {
-      const daysSince = differenceInDays(startOfDay(new Date(TODAY)), startOfDay(new Date(appt.datetime)))
+      const daysSince = differenceInDays(startOfDay(new Date()), startOfDay(new Date(appt.datetime)))
       const patient = patientMap[patientId]
       if (!patient || daysSince < 30) return null
       return { patient, appt, daysSince }
@@ -116,12 +116,9 @@ export default function Dashboard() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-zinc-900">
-            {format(new Date(TODAY), 'EEEE, MMMM d')}
+            {format(new Date(), 'EEEE, MMMM d')}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            {todayConfirmed.length} appointment{todayConfirmed.length !== 1 ? 's' : ''} today
-            {insFlags.length > 0 && ` · ${insFlags.length} insurance item${insFlags.length !== 1 ? 's' : ''} need attention`}
-          </p>
+          <p className="text-sm text-muted-foreground">Practice overview for today</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowAddPatient(true)}>
@@ -133,6 +130,40 @@ export default function Dashboard() {
             New Appointment
           </Button>
         </div>
+      </div>
+
+      {/* Key metrics */}
+      <div className="grid grid-cols-3 gap-4">
+        <Link to="/schedule" className="rounded-lg border bg-white p-4 transition-colors hover:border-teal-300">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Scheduled Today</span>
+            <CalendarPlus className="h-4 w-4 text-teal-500" />
+          </div>
+          <p className="text-3xl font-bold text-zinc-900">{todayConfirmed.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">confirmed appointments</p>
+        </Link>
+        <Link
+          to="/insurance"
+          className={`rounded-lg border p-4 transition-colors hover:border-amber-300 ${insFlags.length > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white'}`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Insurance Attention</span>
+            <AlertCircle className={`h-4 w-4 ${insFlags.length > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
+          </div>
+          <p className={`text-3xl font-bold ${insFlags.length > 0 ? 'text-amber-700' : 'text-zinc-900'}`}>{insFlags.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">{insFlags.length > 0 ? 'need action before visit' : 'all clear'}</p>
+        </Link>
+        <Link
+          to="/schedule"
+          className={`rounded-lg border p-4 transition-colors hover:border-blue-300 ${inboxRequested.length > 0 ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pending Confirmations</span>
+            <MessageSquare className={`h-4 w-4 ${inboxRequested.length > 0 ? 'text-blue-500' : 'text-muted-foreground'}`} />
+          </div>
+          <p className={`text-3xl font-bold ${inboxRequested.length > 0 ? 'text-blue-700' : 'text-zinc-900'}`}>{inboxRequested.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">{inboxRequested.length > 0 ? 'booking requests waiting' : 'inbox clear'}</p>
+        </Link>
       </div>
 
       <div className="grid grid-cols-3 gap-5">
@@ -307,7 +338,7 @@ export default function Dashboard() {
           <div className="rounded-lg border bg-white p-4">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-zinc-700">June Revenue</h2>
+              <h2 className="text-sm font-semibold text-zinc-700">{format(new Date(), 'MMMM')} Revenue</h2>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">

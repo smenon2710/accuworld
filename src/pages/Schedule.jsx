@@ -15,8 +15,7 @@ import InsuranceBadge from '@/components/patients/InsuranceBadge'
 import NewAppointmentDialog from '@/components/schedule/NewAppointmentDialog'
 import { APPOINTMENT_STATUS, APPOINTMENT_TYPE } from '@/data/seed'
 
-// Prototype "today"
-const TODAY = new Date('2026-06-21T12:00:00')
+const TODAY = new Date()
 
 function appointmentTypeLabel(type) {
   return {

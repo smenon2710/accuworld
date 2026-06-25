@@ -215,7 +215,7 @@ All backlog items have been implemented. No open backlog items remain.
 
 ---
 
-## Build Status (updated 2026-06-25 — treatment plan UX improvements)
+## Build Status (updated 2026-06-25 — dynamic dates + dashboard metric cards)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -269,6 +269,8 @@ All backlog items have been implemented. No open backlog items remain.
 | Missing treatment plan callout | Patient detail | When a patient has no treatment plan, an amber callout is now shown in the main column right after the Insurance card (previously invisible). Includes a "Create Plan" button linking to `/treatment-plans`. |
 | Suggest from last visit in new plan form | Treatment Plans → New Plan dialog | When creating a new plan, a teal suggestion box appears (once a patient is selected) showing their most recent visit's chief complaint and treatment strategy. "Use suggestions →" fills Primary Complaint and Treatment Goals fields. Dismissible with ✕. |
 | Chief complaint hint from treatment plan | Visit / Chart → Subjective | When opening a new chart note for a patient who already has a treatment plan, a teal hint appears below the Chief Complaint field showing the plan's primary complaint. "Use this" fills the field; ✕ dismisses. Only shown while the field is empty. |
+| Dashboard metric cards | Dashboard | Three stat cards at top of Dashboard: "Scheduled Today" (teal, links to /schedule), "Insurance Attention" (amber when >0, links to /insurance), "Pending Confirmations" (blue when >0, links to /schedule). Replace the subtitle appointment/insurance counts. |
+| Dynamic dates in seed data | `seed.js`, `Dashboard.jsx`, `Schedule.jsx` | All appointment datetimes, visit dates, invoice dates, and treatment plan dates now derive from the real current date using `offsetDate()`/`offsetDatetime()` helpers. "Today" is no longer hardcoded. **IMPORTANT: Click "Reset Data" in the demo banner before each demo run** to flush cached localStorage dates. |
 
 ### Bug fixes (2026-06-25)
 
@@ -295,7 +297,7 @@ All backlog items have been implemented. No open backlog items remain.
 
 ### Prototype-specific decisions logged here
 
-- **"Today" is hardcoded** as `2026-06-21` in `Dashboard.jsx` and `Schedule.jsx` so seed data flags appear correctly on every demo run.
+- **"Today" is dynamic** — `Dashboard.jsx` uses `format(new Date(), 'yyyy-MM-dd')` and `Schedule.jsx` uses `new Date()`. Seed data uses `offsetDate()`/`offsetDatetime()` helpers so all appointments, visits, invoices, and treatment plans are relative to real-world today. **CRITICAL for demos: click "Reset Data" in the demo banner before each demo** so stale localStorage dates are replaced with fresh seed offsets.
 - **State persists to localStorage** automatically; "Reset Data" button in demo banner restores seed state.
 - **Visit decrement on chart save** — safer for demo than on appointment complete, as it requires the practitioner to actually open and save the chart.
 - **Eligibility check is fully simulated** — `mockEligibilityResult()` in `Insurance.jsx` derives its response from the existing seed insurance profile (coverage status, visits remaining, copay). No real API call. The 1.2s delay is intentional to make the interaction feel authentic.
