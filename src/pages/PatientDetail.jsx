@@ -49,7 +49,8 @@ function appointmentStatusBadge(status) {
 export default function PatientDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { patients, insuranceProfiles, appointments, visits, treatmentPlans, updatePatient } = useApp()
+  const { patients, insuranceProfiles, appointments, visits, treatmentPlans, updatePatient, loggedInRole } = useApp()
+  const canChart = loggedInRole !== 'frontdesk'
   const [showAdditional, setShowAdditional] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
 
@@ -327,11 +328,13 @@ export default function PatientDetail() {
                 <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
                 <p className="text-sm text-amber-800">No treatment plan on file.</p>
               </div>
-              <Link to="/treatment-plans">
-                <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
-                  Create Plan
-                </Button>
-              </Link>
+              {canChart && (
+                <Link to="/treatment-plans">
+                  <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
+                    Create Plan
+                  </Button>
+                </Link>
+              )}
             </div>
           )}
 
@@ -372,9 +375,11 @@ export default function PatientDetail() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Visit History</CardTitle>
                 <div className="flex items-center gap-3">
-                  <Button size="sm" variant="outline" onClick={() => navigate(`/visits?patient=${id}`)}>
-                    <Plus className="h-3.5 w-3.5" /> New Note
-                  </Button>
+                  {canChart && (
+                    <Button size="sm" variant="outline" onClick={() => navigate(`/visits?patient=${id}`)}>
+                      <Plus className="h-3.5 w-3.5" /> New Note
+                    </Button>
+                  )}
                   <Link to="/visits" className="text-xs text-teal-700 hover:underline">All visits</Link>
                 </div>
               </div>

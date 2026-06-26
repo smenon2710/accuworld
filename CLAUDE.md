@@ -215,7 +215,7 @@ All backlog items have been implemented. No open backlog items remain.
 
 ---
 
-## Build Status (updated 2026-06-26 — chart page suggestion guide + AI stop button)
+## Build Status (updated 2026-06-26 — Front Office role gating complete)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -282,6 +282,8 @@ All backlog items have been implemented. No open backlog items remain.
 | Front Office could access chart via Schedule "Complete + Chart" button | `canChart = loggedInRole !== 'frontdesk'` added to Dashboard and Schedule; button hidden for Front Office |
 | Front Office / Practitioner toggle allowed role escalation after login | Toggle removed entirely. Role is now fixed at login. `viewMode` state and `setViewMode` removed from AppContext. Sidebar reads `loggedInRole` directly for nav filtering and emphasis. |
 | Practitioner had explicit "Mark Complete" action — should be Front Office only | Schedule: Practitioner sees "Chart" on confirmed appointments (save auto-completes). Front Office sees "Mark Complete". Appointment completion is now strictly an admin-checkout action. |
+| Front Office could create visit notes via Patient → Visit History → "New Note" | `canChart = loggedInRole !== 'frontdesk'` added to `PatientDetail.jsx`. "New Note" button hidden for Front Office. |
+| Front Office saw "Create Plan" button linking to inaccessible Treatment Plans page | Same `canChart` guard hides the "Create Plan" button in the no-treatment-plan callout for Front Office. The amber callout message still shows so Front Office knows the practitioner needs to create one. |
 
 ### Bug fixes (2026-06-24)
 
