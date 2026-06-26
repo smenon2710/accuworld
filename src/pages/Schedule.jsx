@@ -232,6 +232,15 @@ export default function Schedule() {
         </div>
       </div>
 
+      {/* Status legend */}
+      <div className="flex items-center gap-4 text-xs text-zinc-600">
+        <span className="font-medium text-muted-foreground">Appointment status:</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-teal-500 inline-block" /> Confirmed</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-amber-400 inline-block" /> Requested</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-zinc-400 inline-block" /> Completed</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-red-400 inline-block" /> No-show</span>
+      </div>
+
       <div className="grid grid-cols-3 gap-5">
         {/* Calendar grid */}
         <div className="col-span-2">

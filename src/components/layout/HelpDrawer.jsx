@@ -9,6 +9,13 @@ const DEMO_STEPS = [
   { id: 5, label: 'Generate a superbill', detail: 'Billing → New Invoice → Print Superbill' },
 ]
 
+const SCHEDULE_COLOR_GUIDE = [
+  { color: 'bg-teal-500', label: 'Confirmed', desc: 'Booked and confirmed — patient is expected.' },
+  { color: 'bg-amber-400', label: 'Requested', desc: 'Booking request not yet confirmed by the clinic.' },
+  { color: 'bg-zinc-400', label: 'Completed', desc: 'Visit is done and checked out.' },
+  { color: 'bg-red-400', label: 'No-show', desc: 'Patient did not attend.' },
+]
+
 const FLAG_GUIDE = [
   {
     colorClass: 'text-amber-700 bg-amber-50',
@@ -101,6 +108,24 @@ export default function HelpDrawer({ open, onClose }) {
                 </li>
               ))}
             </ol>
+          </section>
+
+          {/* Schedule color guide */}
+          <section>
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Schedule Appointment Colors
+            </h3>
+            <div className="space-y-2">
+              {SCHEDULE_COLOR_GUIDE.map(({ color, label, desc }) => (
+                <div key={label} className="flex items-start gap-2.5">
+                  <span className={`mt-0.5 h-3 w-3 shrink-0 rounded-sm ${color}`} />
+                  <div>
+                    <span className="text-xs font-semibold text-zinc-700">{label}</span>
+                    <p className="text-xs text-muted-foreground">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
 
           {/* Insurance flag guide */}
