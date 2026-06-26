@@ -284,6 +284,8 @@ All backlog items have been implemented. No open backlog items remain.
 | Practitioner had explicit "Mark Complete" action — should be Front Office only | Schedule: Practitioner sees "Chart" on confirmed appointments (save auto-completes). Front Office sees "Mark Complete". Appointment completion is now strictly an admin-checkout action. |
 | Front Office could create visit notes via Patient → Visit History → "New Note" | `canChart = loggedInRole !== 'frontdesk'` added to `PatientDetail.jsx`. "New Note" button hidden for Front Office. |
 | Front Office saw "Create Plan" button linking to inaccessible Treatment Plans page | Same `canChart` guard hides the "Create Plan" button in the no-treatment-plan callout for Front Office. The amber callout message still shows so Front Office knows the practitioner needs to create one. |
+| Front Office saw "View all" link in Treatment Plan card → `/treatment-plans` | Hidden for Front Office via `canChart` guard in `PatientDetail.jsx`. |
+| Front Office saw "All visits" link in Visit History → `/visits` (nav-hidden page) | Hidden for Front Office via `canChart` guard in `PatientDetail.jsx`. |
 
 ### Bug fixes (2026-06-24)
 

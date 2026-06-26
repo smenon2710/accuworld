@@ -296,7 +296,7 @@ export default function PatientDetail() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Treatment Plan</CardTitle>
-                  <Link to="/treatment-plans" className="text-xs text-teal-700 hover:underline">View all</Link>
+                  {canChart && <Link to="/treatment-plans" className="text-xs text-teal-700 hover:underline">View all</Link>}
                 </div>
               </CardHeader>
               <CardContent>
@@ -380,7 +380,7 @@ export default function PatientDetail() {
                       <Plus className="h-3.5 w-3.5" /> New Note
                     </Button>
                   )}
-                  <Link to="/visits" className="text-xs text-teal-700 hover:underline">All visits</Link>
+                  {canChart && <Link to="/visits" className="text-xs text-teal-700 hover:underline">All visits</Link>}
                 </div>
               </div>
             </CardHeader>
