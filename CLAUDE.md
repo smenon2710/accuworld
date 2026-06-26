@@ -215,7 +215,7 @@ All backlog items have been implemented. No open backlog items remain.
 
 ---
 
-## Build Status (updated 2026-06-25 — dynamic dates + dashboard metric cards)
+## Build Status (updated 2026-06-26 — schedule color legend)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -271,6 +271,7 @@ All backlog items have been implemented. No open backlog items remain.
 | Chief complaint hint from treatment plan | Visit / Chart → Subjective | When opening a new chart note for a patient who already has a treatment plan, a teal hint appears below the Chief Complaint field showing the plan's primary complaint. "Use this" fills the field; ✕ dismisses. Only shown while the field is empty. |
 | Dashboard metric cards | Dashboard | Three stat cards at top of Dashboard: "Scheduled Today" (teal, links to /schedule), "Insurance Attention" (amber when >0, links to /insurance), "Pending Confirmations" (blue when >0, links to /schedule). Replace the subtitle appointment/insurance counts. |
 | Dynamic dates in seed data | `seed.js`, `Dashboard.jsx`, `Schedule.jsx` | All appointment datetimes, visit dates, invoice dates, and treatment plan dates now derive from the real current date using `offsetDate()`/`offsetDatetime()` helpers. "Today" is no longer hardcoded. **IMPORTANT: Click "Reset Data" in the demo banner before each demo run** to flush cached localStorage dates. |
+| Schedule status color legend | Schedule page + Help drawer | Compact inline legend row added below the Schedule header (Confirmed/Requested/Completed/No-show with color swatches). Matching "Schedule Appointment Colors" section added to the Help drawer between Demo Walkthrough and Insurance Flag Colors. |
 
 ### Bug fixes (2026-06-25)
 
