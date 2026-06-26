@@ -215,7 +215,7 @@ All backlog items have been implemented. No open backlog items remain.
 
 ---
 
-## Build Status (updated 2026-06-26 — schedule color legend)
+## Build Status (updated 2026-06-26 — chart page suggestion guide + AI stop button)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -272,6 +272,8 @@ All backlog items have been implemented. No open backlog items remain.
 | Dashboard metric cards | Dashboard | Three stat cards at top of Dashboard: "Scheduled Today" (teal, links to /schedule), "Insurance Attention" (amber when >0, links to /insurance), "Pending Confirmations" (blue when >0, links to /schedule). Replace the subtitle appointment/insurance counts. |
 | Dynamic dates in seed data | `seed.js`, `Dashboard.jsx`, `Schedule.jsx` | All appointment datetimes, visit dates, invoice dates, and treatment plan dates now derive from the real current date using `offsetDate()`/`offsetDatetime()` helpers. "Today" is no longer hardcoded. **IMPORTANT: Click "Reset Data" in the demo banner before each demo run** to flush cached localStorage dates. |
 | Schedule status color legend | Schedule page + Help drawer | Compact inline legend row added below the Schedule header (Confirmed/Requested/Completed/No-show with color swatches). Matching "Schedule Appointment Colors" section added to the Help drawer between Demo Walkthrough and Insurance Flag Colors. |
+| Chart page suggestion guide | Visit / Chart | Dismissible teal info strip at the top of the chart form explaining all suggestion buttons in plain English (no jargon). Dismissed per session via `useState`. |
+| AI Stop button + save-anytime note | Visit / Chart → SOAP Note | "Draft with AI" button replaced by a red "Stop" button while streaming (uses `AbortController` — keeps whatever was generated). A "AI is thinking — you can save at any time" note appears near the Save button whenever any AI call is in progress. |
 
 ### Bug fixes (2026-06-25)
 
@@ -320,3 +322,6 @@ All backlog items have been implemented. No open backlog items remain.
 - **Missing treatment plan callout** — `PatientDetail.jsx` renders an amber callout in place of the silent absence when `plan` is null. Positioned right after the Insurance card so it's the second thing the practitioner sees. Links to `/treatment-plans` where the patient's chip appears in the "patients without a plan" section.
 - **Visit-to-plan suggestions** — `TreatmentPlans.jsx` computes `dialogLatestVisit` (most recent visit for the selected patient) on every render. Suggestion box shown when `!editing && form.patientId && dialogLatestVisit && !suggestionDismissed`. Reset on `openNew()` and on chip-button clicks. Fills `primaryComplaint` from `chiefComplaint` and `treatmentGoals` from `treatmentStrategy`.
 - **Plan-to-visit chief complaint hint** — `Visits.jsx` looks up `treatmentPlans` (added to `useApp()` destructuring) for the current patient. Hint shown when `!existingVisit && plan?.primaryComplaint && !planComplaintDismissed && !form.chiefComplaint.trim()`. Disappears naturally once the practitioner starts typing.
+- **AI Stop button** — `draftAbortRef` (useRef) holds the active `AbortController` for the SOAP draft stream. `handleStopDraft()` calls `abort()`, the fetch catch block checks `err.name === 'AbortError'` and suppresses the error, keeping whatever text was streamed. The Draft with AI button is replaced by a red Stop button while `draftingNote` is true.
+- **Chart suggestion guide** — `showSuggestionGuide` useState (default true) controls a dismissible teal info strip at the top of the chart form. Resets each time the page is mounted (session-scoped, not persisted to localStorage) so new users always see it first visit.
+- **Save-anytime note** — a small text note "AI is thinking — you can save at any time" appears near the Save button whenever `draftingNote || diagnosisLoading || homeCareLoading || formulaLoading` is true, making it clear the save button is never blocked.

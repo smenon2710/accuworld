@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
-import { Lightbulb, Save, ChevronDown, ChevronUp, Sparkles, Loader2, Wand2 } from 'lucide-react'
+import { Lightbulb, Save, ChevronDown, ChevronUp, Sparkles, Loader2, Wand2, Info, X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { useApp } from '@/context/AppContext'
 import { Button } from '@/components/ui/button'
@@ -107,6 +107,8 @@ export default function Visits() {
   const [formulaLoading, setFormulaLoading] = useState(false)
   const [formulaSuggestion, setFormulaSuggestion] = useState(null)
   const [planComplaintDismissed, setPlanComplaintDismissed] = useState(false)
+  const [showSuggestionGuide, setShowSuggestionGuide] = useState(true)
+  const draftAbortRef = useRef(null)
 
   // When navigating from the visit list to a form (same component instance, only search params change),
   // useState initializers don't re-run. This effect syncs form state to the loaded visit.
@@ -157,12 +159,19 @@ export default function Visits() {
     }
   }
 
+  function handleStopDraft() {
+    draftAbortRef.current?.abort()
+  }
+
   async function handleDraftNote() {
     const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY
     if (!apiKey) {
       setDraftError('Add your OpenRouter API key to .env as VITE_OPENROUTER_API_KEY to enable AI drafting.')
       return
     }
+
+    const controller = new AbortController()
+    draftAbortRef.current = controller
 
     setDraftingNote(true)
     setDraftError(null)
@@ -196,6 +205,7 @@ Be specific, clinical, and concise. Use proper TCM terminology.`
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
@@ -221,7 +231,6 @@ Be specific, clinical, and concise. Use proper TCM terminology.`
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-
         const chunk = decoder.decode(value, { stream: true })
         for (const line of chunk.split('\n')) {
           if (!line.startsWith('data: ')) continue
@@ -238,11 +247,16 @@ Be specific, clinical, and concise. Use proper TCM terminology.`
         }
       }
     } catch (err) {
-      console.error('[Visits] AI draft failed:', err)
-      setDraftError('Draft failed — check your API key or network. You can still write the note manually.')
-      set('soapNote', SOAP_TEMPLATE)
+      if (err.name === 'AbortError') {
+        // User stopped generation — keep whatever was streamed, no error shown
+      } else {
+        console.error('[Visits] AI draft failed:', err)
+        setDraftError('Draft failed — check your API key or network. You can still write the note manually.')
+        set('soapNote', SOAP_TEMPLATE)
+      }
     } finally {
       setDraftingNote(false)
+      draftAbortRef.current = null
     }
   }
 
@@ -494,6 +508,9 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
           )}
         </div>
         <div className="flex items-center gap-2">
+          {(draftingNote || diagnosisLoading || homeCareLoading || formulaLoading) && (
+            <span className="text-xs text-muted-foreground">AI is thinking — you can save at any time</span>
+          )}
           {saved && <span className="text-sm text-teal-600">Saved ✓</span>}
           <Button onClick={handleSave}>
             <Save className="h-4 w-4" />
@@ -501,6 +518,24 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
           </Button>
         </div>
       </div>
+
+      {/* How suggestions work — dismissible guide */}
+      {showSuggestionGuide && (
+        <div className="flex items-start gap-3 rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-xs text-teal-800">
+          <Info className="h-4 w-4 shrink-0 mt-0.5 text-teal-500" />
+          <div className="flex-1 space-y-0.5">
+            <p className="font-medium text-teal-900 mb-1">How suggestions work on this page</p>
+            <p><span className="font-medium">Chief Complaint:</span> If this patient has a treatment plan, their primary complaint is shown as a hint — click "Use this" to fill it in.</p>
+            <p><span className="font-medium">Auto-fill O: (Wand icon):</span> Instantly composes the Objective line from your pulse and tongue selections — no AI needed.</p>
+            <p><span className="font-medium">Suggest Points (Lightbulb):</span> Looks up common acupuncture points for the chief complaint from a built-in reference — instant, no AI.</p>
+            <p><span className="font-medium">Suggest Home Care (Lightbulb):</span> Checks a built-in list first; falls back to AI if the complaint isn't recognised.</p>
+            <p><span className="font-medium">Sparkles (✦) buttons — Suggest Diagnosis, Suggest Formula, Draft with AI:</span> These call an AI and stream results live. Results appear in a preview box below the field — review and click "Use this →" before they are applied. You can save the note at any time, even while AI is still generating.</p>
+          </div>
+          <button onClick={() => setShowSuggestionGuide(false)} className="shrink-0 text-teal-400 hover:text-teal-700">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-5">
         {/* Main form */}
@@ -805,19 +840,29 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                 <CardTitle className="text-base">SOAP Note</CardTitle>
                 {showSoap ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleDraftNote}
-                disabled={draftingNote}
-                className="h-7 gap-1.5 text-xs text-teal-700 border-teal-200 hover:bg-teal-50 hover:text-teal-800 disabled:opacity-60"
-              >
-                {draftingNote
-                  ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Drafting…</>
-                  : <><Sparkles className="h-3.5 w-3.5" />Draft with AI</>
-                }
-              </Button>
+              {draftingNote ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleStopDraft}
+                  className="h-7 gap-1.5 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Stop
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDraftNote}
+                  className="h-7 gap-1.5 text-xs text-teal-700 border-teal-200 hover:bg-teal-50 hover:text-teal-800"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Draft with AI
+                </Button>
+              )}
             </div>
             {showSoap && (
               <CardContent>
