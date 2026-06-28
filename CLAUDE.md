@@ -215,7 +215,7 @@ All backlog items have been implemented. No open backlog items remain.
 
 ---
 
-## Build Status (updated 2026-06-28 — Phase 0 post-feedback hardening complete)
+## Build Status (updated 2026-06-28 — Phase 1.1 patient intake form complete)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -274,6 +274,22 @@ All backlog items have been implemented. No open backlog items remain.
 | Schedule status color legend | Schedule page + Help drawer | Compact inline legend row added below the Schedule header (Confirmed/Requested/Completed/No-show with color swatches). Matching "Schedule Appointment Colors" section added to the Help drawer between Demo Walkthrough and Insurance Flag Colors. |
 | Chart page suggestion guide | Visit / Chart | Dismissible teal info strip at the top of the chart form explaining all suggestion buttons in plain English (no jargon). Dismissed per session via `useState`. |
 | AI Stop button + save-anytime note | Visit / Chart → SOAP Note | "Draft with AI" button replaced by a red "Stop" button while streaming (uses `AbortController` — keeps whatever was generated). A "AI is thinking — you can save at any time" note appears near the Save button whenever any AI call is in progress. |
+
+### Phase 1.1 — Digital patient intake form (2026-06-28)
+
+| Task | Where | Notes |
+|------|-------|-------|
+| **5-screen intake form** | `/intake/:patientId` (new page) | Full-page route outside `<Layout>` — no sidebar, tablet-friendly. Launched from PatientDetail header ("Intake Form" button) or AddPatientDialog ("Add & Start Intake →"). |
+| **Screen 1 — Patient Information** | `Intake.jsx` | HIPAA notice (scrollable), full demographics (name, address, DOB, sex, marital status, referral source, occupation, employer, emergency contact). Typed-name signature gate — cannot advance without signing. |
+| **Screen 2 — Medical History** | `Intake.jsx` | Chief complaint + date of onset. Add-row tables for surgeries, traumatic injuries, and current medications. Family history checkboxes (15 conditions). Body temp/perspiration multi-select. Stress level slider (0–10). Emotional symptom multi-select. No signature required. |
+| **Screen 3 — Pain Body Diagram** | `Intake.jsx` + `PainBodyDiagram.jsx` | SVG front and back human silhouettes side by side. Tap to add pain markers (local = solid red circle, radiating = dashed circle). Tap an existing marker to remove it. Marker type toggle (Local Pain / Radiating Pain). Patient signature required. |
+| **Screen 4 — Consent to Treat** | `Intake.jsx` | Full acupuncture informed consent text (treatment methods, risks, herbs disclosure, no-guarantee clause, confidentiality). Typed-name signature gate. |
+| **Screen 5 — Legal & Financial** | `Intake.jsx` | Financial Policy Agreement, Arbitration Agreement (6 articles, NJ law), Assignment of Benefits. Signature + initials both required. |
+| **Completion flow** | `Intake.jsx` | On final submit: `saveIntakeForm()` in AppContext. Key demographics (phone, email, DOB, sex, address, occupation, employer, emergency contact) sync back to patient record via `updatePatient()`. Confirmation screen with timestamp. |
+| **PatientDetail entry point** | `PatientDetail.jsx` | Header shows teal "Intake Form" button (no intake on record) or outline "Intake Complete" button (completed). |
+| **AddPatientDialog entry point** | `AddPatientDialog.jsx` | "Add & Start Intake →" secondary button creates the patient then navigates directly to `/intake/:id`. |
+| **Legal text source file** | `src/data/intakeContent.js` | All 5 legal/consent texts (HIPAA_NOTICE, CONSENT_TEXT, FINANCIAL_POLICY, ARBITRATION_AGREEMENT, ASSIGNMENT_OF_BENEFITS) plus FAMILY_HISTORY_CONDITIONS, BODY_SYMPTOM_OPTIONS, EMOTIONAL_SYMPTOM_OPTIONS arrays. |
+| **AppContext + seed** | `AppContext.jsx`, `seed.js` | `intakeForms` state (persisted to `aw_intakes`). `saveIntakeForm(form)` upserts by patientId. `resetToSeedData()` clears intake forms. `seedIntakeForms = []` — no seed intakes (intake is always a live patient action). |
 
 ### Phase 0 — post-feedback hardening (2026-06-28)
 
@@ -347,3 +363,10 @@ Implemented based on feedback from Leonid Belenitsky, L.Ac. (Monroe Township NJ,
 - **CPT line item model** — `amount` on invoice line items is the **per-unit rate**; line total = `amount × units`. `SuperbillView` renders `units × $rate = $total`. New invoice dialog also treats amount as per-unit. Seed invoices updated to use per-unit rates throughout.
 - **Dashboard 4th metric card** — "Unsigned Notes" counts `visits.filter(v => v.status !== 'signed').length`. Only rendered when `canChart` (hidden for Front Office). Grid changed from `grid-cols-3` to `grid-cols-4`; when Front Office is logged in it shows 3 cards (the 4th is conditionally omitted).
 - **docs/ folder** — strategic documents moved here: `accuworld_roadmap_20260627.md` (4-phase post-feedback roadmap), `post_feedback_pivot_claude_20260627.md` (practitioner feedback summary), and archived versions of PRD and production readiness docs. `PRD.md` and `claude_production_readiness.md` removed from root.
+- **Intake route is outside Layout** — `/intake/:patientId` is registered as a sibling of `/login`, not nested under `<Layout>`. This gives it a full white-screen tablet UI with no sidebar, no demo banner, no nav. The patient fills this on a clinic device.
+- **Signatures are typed names** — not canvas/stylus. Acceptable for the prototype demo. Production will use HelloSign API (Phase 2). The input uses `fontFamily: cursive` to visually distinguish it from regular form fields.
+- **Pain diagram markers stored as {view, x, y, type}** — `x` and `y` are in SVG viewBox coordinates (0–100 and 0–240 respectively). `view` is `'front'` or `'back'`. `type` is `'local'` or `'radiating'`. Clicking on an existing marker calls `onRemove(i)` with the full-array index (not the filtered-view index).
+- **Demographics sync on completion** — `handleNext()` on step 5 calls both `saveIntakeForm()` and `updatePatient()` to back-fill the patient record with phone/email/DOB/sex/address/occupation/employer/emergencyContact from the intake. Fields are only overwritten if the intake value is non-empty (existing patient data is preserved if the patient left a field blank).
+- **intakeContent.js texts** — based on Leonid Belenitsky's actual paper intake packet (Monroe TWP NJ). Texts are realistic but not verbatim legal copies — production will require attorney review before use with real patients.
+- **Screen 2 has no signature gate** — Medical history is informational; the practitioner reviews it. Only screens 1, 3, 4, and 5 require signatures to advance.
+- **"Add & Start Intake →" in AddPatientDialog** — duplicates the insurance stub creation logic inline (can't call `handleSubmit` from a button outside the form). This is intentional: the button creates the patient + insurance shell, closes the dialog, and navigates to intake, bypassing form submission to avoid double-save.
