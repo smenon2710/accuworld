@@ -1,5 +1,6 @@
 # Production Readiness Guide — AccuWorld
 ### From Prototype to Sellable SaaS for Solo Practitioners
+> **Created:** 2026-06-26
 
 Written for a solo developer / small LLC targeting solo acupuncturists and small practices.
 This document covers every dimension you need to address before charging real customers.

@@ -21,12 +21,13 @@ const REF_LABEL = {
   check: 'Check #',
 }
 
+// The 4 acupuncture CPT codes used for billing (plus unlisted). Rates per 15-min unit.
 const CPT_DEFAULTS = [
-  { description: 'Acupuncture — 1st 15 min', cptCode: '97810', units: 1, amount: 80 },
-  { description: 'Acupuncture — ea addl 15 min', cptCode: '97811', units: 1, amount: 20 },
-  { description: 'Electroacupuncture — 1st 15 min', cptCode: '97813', units: 1, amount: 80 },
-  { description: 'Electroacupuncture — ea addl 15 min', cptCode: '97814', units: 1, amount: 20 },
-  { description: 'Manual Therapy / Cupping', cptCode: '97140', units: 1, amount: 30 },
+  { description: 'Acupuncture w/o E-Stim — 1st 15 min', cptCode: '97810', units: 1, amount: 75 },
+  { description: 'Acupuncture w/o E-Stim — ea addl 15 min', cptCode: '97811', units: 1, amount: 70 },
+  { description: 'Acupuncture w/ E-Stim — 1st 15 min', cptCode: '97813', units: 1, amount: 90 },
+  { description: 'Acupuncture w/ E-Stim — ea addl 15 min', cptCode: '97814', units: 1, amount: 80 },
+  { description: 'Unlisted musculoskeletal procedure', cptCode: '20999', units: 1, amount: 0 },
 ]
 
 function formatDate(d) {
@@ -72,8 +73,8 @@ function SuperbillView({ invoice, patient, onClose }) {
             <tr key={i} className="border-b">
               <td className="py-2">{li.description}</td>
               <td className="py-2">{li.cptCode}</td>
-              <td className="py-2">{li.units}</td>
-              <td className="py-2 text-right">${li.amount}</td>
+              <td className="py-2">{li.units} × ${li.amount}</td>
+              <td className="py-2 text-right">${li.amount * li.units}</td>
             </tr>
           ))}
         </tbody>

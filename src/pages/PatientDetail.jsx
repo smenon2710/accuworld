@@ -180,6 +180,17 @@ export default function PatientDetail() {
                     </div>
                   )}
 
+                  {/* Subscriber ID + Group # — most important for coverage verification */}
+                  <div className="grid grid-cols-2 gap-3 rounded-md border bg-zinc-50 px-3 py-2.5 text-sm">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Subscriber ID</p>
+                      <p className="font-semibold text-zinc-900 mt-0.5">{ins.memberId || <span className="text-muted-foreground font-normal">—</span>}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Group #</p>
+                      <p className="font-semibold text-zinc-900 mt-0.5">{ins.groupNumber || <span className="text-muted-foreground font-normal">—</span>}</p>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                     <div>
                       <p className="text-xs text-muted-foreground">Payer</p>
@@ -189,18 +200,6 @@ export default function PatientDetail() {
                       <div>
                         <p className="text-xs text-muted-foreground">Plan</p>
                         <p className="font-medium">{ins.planName}</p>
-                      </div>
-                    )}
-                    {ins.memberId && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">Member ID</p>
-                        <p className="font-medium">{ins.memberId}</p>
-                      </div>
-                    )}
-                    {ins.groupNumber && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">Group #</p>
-                        <p className="font-medium">{ins.groupNumber}</p>
                       </div>
                     )}
                     {ins.coverageStatus === COVERAGE_STATUS.COVERED && (
@@ -488,6 +487,23 @@ export default function PatientDetail() {
             </button>
             {showAdditional && (
               <div className="border-t px-4 pb-4 pt-3 space-y-3 text-sm">
+                {patient.referralSource && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Referral Source</p>
+                    <p>{patient.referralSource}</p>
+                  </div>
+                )}
+                {(patient.occupation || patient.employer) && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Occupation / Employer</p>
+                    <p>{[patient.occupation, patient.employer].filter(Boolean).join(' — ')}</p>
+                  </div>
+                )}
+                {patient.inCollections && (
+                  <div className="rounded-md bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700">
+                    In Collections
+                  </div>
+                )}
                 {patient.allergies && (
                   <div>
                     <p className="text-xs text-muted-foreground">Allergies</p>
@@ -509,7 +525,11 @@ export default function PatientDetail() {
                 {patient.emergencyContact?.name && (
                   <div>
                     <p className="text-xs text-muted-foreground">Emergency Contact</p>
-                    <p>{patient.emergencyContact.name} · {patient.emergencyContact.phone}</p>
+                    <p>
+                      {patient.emergencyContact.name}
+                      {patient.emergencyContact.relation ? ` (${patient.emergencyContact.relation})` : ''}
+                      {patient.emergencyContact.phone ? ` · ${patient.emergencyContact.phone}` : ''}
+                    </p>
                   </div>
                 )}
                 {patient.notes && (
@@ -518,7 +538,7 @@ export default function PatientDetail() {
                     <p>{patient.notes}</p>
                   </div>
                 )}
-                {!patient.allergies && !patient.medications && !patient.medicalHistory && !patient.emergencyContact?.name && !patient.notes && (
+                {!patient.referralSource && !patient.allergies && !patient.medications && !patient.medicalHistory && !patient.emergencyContact?.name && !patient.notes && (
                   <p className="text-muted-foreground">No additional info recorded. Edit the patient to add details.</p>
                 )}
               </div>

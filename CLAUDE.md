@@ -215,7 +215,7 @@ All backlog items have been implemented. No open backlog items remain.
 
 ---
 
-## Build Status (updated 2026-06-26 — Front Office role gating complete)
+## Build Status (updated 2026-06-28 — Phase 0 post-feedback hardening complete)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -275,6 +275,18 @@ All backlog items have been implemented. No open backlog items remain.
 | Chart page suggestion guide | Visit / Chart | Dismissible teal info strip at the top of the chart form explaining all suggestion buttons in plain English (no jargon). Dismissed per session via `useState`. |
 | AI Stop button + save-anytime note | Visit / Chart → SOAP Note | "Draft with AI" button replaced by a red "Stop" button while streaming (uses `AbortController` — keeps whatever was generated). A "AI is thinking — you can save at any time" note appears near the Save button whenever any AI call is in progress. |
 
+### Phase 0 — post-feedback hardening (2026-06-28)
+
+Implemented based on feedback from Leonid Belenitsky, L.Ac. (Monroe Township NJ, 2026-06-26) and `docs/accuworld_roadmap_20260627.md`.
+
+| Task | Where | Notes |
+|------|-------|-------|
+| **0.1 Fix CPT codes** | `Billing.jsx`, `seed.js` | `CPT_DEFAULTS` updated to correct acupuncture-only codes: 97810 ($75), 97811 ($70), 97813 ($90), 97814 ($80), 20999 ($0 placeholder). Removed 97140 (PT manipulation — not an acupuncture code). All seed invoice line items recalculated with per-unit rates. `SuperbillView` now shows `units × rate = line total`. |
+| **0.2 Expanded patient demographics** | `AddPatientDialog.jsx`, `EditPatientDialog.jsx` | Both dialogs rewritten with full intake fields: title/suffix/preferredName, dateOfBirth, sex, maritalStatus, languagePreference, address, occupation, employer, referralSource, inCollections flag, emergencyContact (name/relation/phone). |
+| **0.3 Seed data correctness** | `seed.js` | All 14 seed visits now have `status` (`'draft'` or `'signed'`) and `westernDiagnosis` (real ICD-10 codes). v1/v2/v3/v6 = draft; v4/v5/v7/v8–v14 = signed with ICD-10. Payer names corrected: `HORIZON → 'Horizon BCBS NJ'`, added `CIGNA: 'Cigna'`. `PatientDetail.jsx` insurance section now highlights Subscriber ID and Group # first in a boxed layout. Additional Info section shows referralSource, occupation/employer, inCollections badge, emergencyContact.relation. |
+| **0.4 Note Draft → Signed lifecycle** | `Visits.jsx` | Notes have a `status` field: `'draft'` (editable) or `'signed'` (locked, billing-ready). Header shows "Save Draft" + "Sign Note" (existing draft) or "Save Draft" + "Save & Sign" (new note). Signed notes show a teal "Signed — Read Only" lock badge; all inputs disabled. `buildVisitData(status)` helper used by all three save paths. |
+| **0.5 TCM / insurance field separation** | `Visits.jsx`, `Dashboard.jsx` | Blue info banner above Subjective: "Submitted to insurance — use Western medical terms only." Chief Complaint labeled as insurance-facing; TCM term detector shows amber warning if qi/yin/yang/stagnation etc. appear. New Western Diagnosis (ICD-10) text field below chief complaint. Dashed "Internal Clinical Record — Not submitted to insurance" divider before the Objective TCM Assessment card. All TCM clinical fields (`disabled={isSigned}`) and AI suggestion buttons hidden when signed. Dashboard gains a 4th metric card "Unsigned Notes" (amber when > 0, links to /visits, Practitioner/Admin only). |
+
 ### Bug fixes (2026-06-25)
 
 | Bug | Fix |
@@ -329,3 +341,9 @@ All backlog items have been implemented. No open backlog items remain.
 - **AI Stop button** — `draftAbortRef` (useRef) holds the active `AbortController` for the SOAP draft stream. `handleStopDraft()` calls `abort()`, the fetch catch block checks `err.name === 'AbortError'` and suppresses the error, keeping whatever text was streamed. The Draft with AI button is replaced by a red Stop button while `draftingNote` is true.
 - **Chart suggestion guide** — `showSuggestionGuide` useState (default true) controls a dismissible teal info strip at the top of the chart form. Resets each time the page is mounted (session-scoped, not persisted to localStorage) so new users always see it first visit.
 - **Save-anytime note** — a small text note "AI is thinking — you can save at any time" appears near the Save button whenever `draftingNote || diagnosisLoading || homeCareLoading || formulaLoading` is true, making it clear the save button is never blocked.
+- **Note sign/lock lifecycle** — `visit.status` is `'draft'` or `'signed'`. `isSigned = existingVisit?.status === 'signed'` (not `=== 'draft'`) so visits with no status field default to editable — correct for legacy seed data. Three save paths: `handleSave()` → draft, `handleSaveAndSign()` → new note signed in one step, `handleSignNote()` → promotes existing draft to signed without re-saving all fields.
+- **TCM term detector** — `containsTcmTerms(text)` in `Visits.jsx` checks the chief complaint field for a hardcoded list of 17 terms (qi, yin, yang, stagnation, deficiency, blockage, dampness, phlegm, liver qi, kidney yang/yin, spleen qi, blood stasis, cold invasion, heat/cold pattern). Shows an amber inline warning when triggered. Only applied to the insurance-facing chief complaint — not to the clinical TCM fields.
+- **Western Diagnosis (ICD-10) field** — plain text `Input` on the visit form, stored as `visit.westernDiagnosis`. Seed visits v4/v5/v7 and v8–v14 have real ICD-10 codes (M54.50, G43.909, etc.). Searchable ICD-10 dropdown is Phase 1.
+- **CPT line item model** — `amount` on invoice line items is the **per-unit rate**; line total = `amount × units`. `SuperbillView` renders `units × $rate = $total`. New invoice dialog also treats amount as per-unit. Seed invoices updated to use per-unit rates throughout.
+- **Dashboard 4th metric card** — "Unsigned Notes" counts `visits.filter(v => v.status !== 'signed').length`. Only rendered when `canChart` (hidden for Front Office). Grid changed from `grid-cols-3` to `grid-cols-4`; when Front Office is logged in it shows 3 cards (the 4th is conditionally omitted).
+- **docs/ folder** — strategic documents moved here: `accuworld_roadmap_20260627.md` (4-phase post-feedback roadmap), `post_feedback_pivot_claude_20260627.md` (practitioner feedback summary), and archived versions of PRD and production readiness docs. `PRD.md` and `claude_production_readiness.md` removed from root.

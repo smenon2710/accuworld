@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   AlertCircle, Clock, ShieldCheck, UserPlus, CalendarPlus, CheckCircle2,
-  MessageSquare, UserX, TrendingUp,
+  MessageSquare, UserX, TrendingUp, PenLine,
 } from 'lucide-react'
 import { format, parseISO, isPast, differenceInDays, startOfDay } from 'date-fns'
 import { useApp } from '@/context/AppContext'
@@ -43,7 +43,7 @@ function appointmentTypeLabel(type) {
 }
 
 export default function Dashboard() {
-  const { patients, insuranceProfiles, appointments, invoices, updateAppointment, loggedInRole } = useApp()
+  const { patients, insuranceProfiles, appointments, visits, invoices, updateAppointment, loggedInRole } = useApp()
   const canChart = loggedInRole !== 'frontdesk'
   const navigate = useNavigate()
   const [verifyTarget, setVerifyTarget] = useState(null)
@@ -99,6 +99,9 @@ export default function Dashboard() {
     .map((a) => ({ appt: a, patient: patientMap[a.patientId] }))
     .filter(({ patient }) => !!patient)
 
+  // Unsigned notes (draft or missing status)
+  const unsignedNotes = visits.filter((v) => v.status !== 'signed').length
+
   // Monthly revenue (current month based on TODAY)
   const currentMonth = TODAY.slice(0, 7)
   const monthInvoices = invoices.filter((inv) => inv.date?.startsWith(currentMonth))
@@ -133,7 +136,7 @@ export default function Dashboard() {
       </div>
 
       {/* Key metrics */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Link to="/schedule" className="rounded-lg border bg-white p-4 transition-colors hover:border-teal-300">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Scheduled Today</span>
@@ -164,6 +167,19 @@ export default function Dashboard() {
           <p className={`text-3xl font-bold ${inboxRequested.length > 0 ? 'text-blue-700' : 'text-zinc-900'}`}>{inboxRequested.length}</p>
           <p className="text-xs text-muted-foreground mt-1">{inboxRequested.length > 0 ? 'booking requests waiting' : 'inbox clear'}</p>
         </Link>
+        {canChart && (
+          <Link
+            to="/visits"
+            className={`rounded-lg border p-4 transition-colors hover:border-amber-300 ${unsignedNotes > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white'}`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Unsigned Notes</span>
+              <PenLine className={`h-4 w-4 ${unsignedNotes > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
+            </div>
+            <p className={`text-3xl font-bold ${unsignedNotes > 0 ? 'text-amber-700' : 'text-zinc-900'}`}>{unsignedNotes}</p>
+            <p className="text-xs text-muted-foreground mt-1">{unsignedNotes > 0 ? 'need signing before billing' : 'all notes signed'}</p>
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-5">

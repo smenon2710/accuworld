@@ -16,9 +16,10 @@ function offsetDatetime(days, time) {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 export const PAYERS = {
-  HORIZON: 'Horizon',
+  HORIZON: 'Horizon BCBS NJ',
   AETNA: 'Aetna',
   UNITED: 'UnitedHealthcare',
+  CIGNA: 'Cigna',
   EMPIRE: 'Empire Blue Cross',
   SELF_PAY: 'Self-Pay',
   OTHER: 'Other',
@@ -537,6 +538,8 @@ export const seedAppointments = [
 export const seedVisits = [
   {
     id: 'v1',
+    status: 'draft',
+    westernDiagnosis: '',
     appointmentId: 'a9',
     patientId: 'p1',
     date: offsetDate(-14),
@@ -556,6 +559,8 @@ export const seedVisits = [
   },
   {
     id: 'v2',
+    status: 'draft',
+    westernDiagnosis: '',
     appointmentId: 'a10',
     patientId: 'p2',
     date: offsetDate(-13),
@@ -575,6 +580,8 @@ export const seedVisits = [
   },
   {
     id: 'v3',
+    status: 'draft',
+    westernDiagnosis: '',
     appointmentId: 'a11',
     patientId: 'p6',
     date: offsetDate(-11),
@@ -594,6 +601,8 @@ export const seedVisits = [
   },
   {
     id: 'v4',
+    status: 'signed',
+    westernDiagnosis: 'M79.1 — Myalgia (plantar fasciitis)',
     appointmentId: 'a12',
     patientId: 'p4',
     date: offsetDate(-16),
@@ -613,6 +622,8 @@ export const seedVisits = [
   },
   {
     id: 'v5',
+    status: 'signed',
+    westernDiagnosis: 'G89.29 — Other chronic pain (fibromyalgia)',
     appointmentId: 'a13',
     patientId: 'p7',
     date: offsetDate(-14),
@@ -632,6 +643,8 @@ export const seedVisits = [
   },
   {
     id: 'v6',
+    status: 'draft',
+    westernDiagnosis: '',
     appointmentId: 'a14',
     patientId: 'p8',
     date: offsetDate(-9),
@@ -651,6 +664,8 @@ export const seedVisits = [
   },
   {
     id: 'v7',
+    status: 'signed',
+    westernDiagnosis: 'R51.9 — Headache, unspecified',
     appointmentId: 'a15',
     patientId: 'p5',
     date: offsetDate(-32),
@@ -672,6 +687,8 @@ export const seedVisits = [
   // Historical visits for p1 (Maria Rodriguez) — shows downward pain trend over 10-visit course
   {
     id: 'v8',
+    status: 'signed',
+    westernDiagnosis: 'M54.50 — Low back pain, unspecified',
     appointmentId: 'ahist1',
     patientId: 'p1',
     date: offsetDate(-152),
@@ -691,6 +708,8 @@ export const seedVisits = [
   },
   {
     id: 'v9',
+    status: 'signed',
+    westernDiagnosis: 'M54.50 — Low back pain, unspecified',
     appointmentId: 'ahist2',
     patientId: 'p1',
     date: offsetDate(-124),
@@ -710,6 +729,8 @@ export const seedVisits = [
   },
   {
     id: 'v10',
+    status: 'signed',
+    westernDiagnosis: 'M54.50 — Low back pain, unspecified',
     appointmentId: 'ahist3',
     patientId: 'p1',
     date: offsetDate(-89),
@@ -729,6 +750,8 @@ export const seedVisits = [
   },
   {
     id: 'v11',
+    status: 'signed',
+    westernDiagnosis: 'M54.50 — Low back pain, unspecified',
     appointmentId: 'ahist4',
     patientId: 'p1',
     date: offsetDate(-47),
@@ -750,6 +773,8 @@ export const seedVisits = [
   // Historical visits for p2 (James Thompson) — shows downward pain trend over 12-visit course
   {
     id: 'v12',
+    status: 'signed',
+    westernDiagnosis: 'M54.31 — Sciatica, right side',
     appointmentId: 'ahist5',
     patientId: 'p2',
     date: offsetDate(-199),
@@ -769,6 +794,8 @@ export const seedVisits = [
   },
   {
     id: 'v13',
+    status: 'signed',
+    westernDiagnosis: 'M54.31 — Sciatica, right side',
     appointmentId: 'ahist6',
     patientId: 'p2',
     date: offsetDate(-157),
@@ -788,6 +815,8 @@ export const seedVisits = [
   },
   {
     id: 'v14',
+    status: 'signed',
+    westernDiagnosis: 'M54.31 — Sciatica, right side',
     appointmentId: 'ahist7',
     patientId: 'p2',
     date: offsetDate(-108),
@@ -887,10 +916,10 @@ export const seedInvoices = [
     visitId: 'v1',
     date: offsetDate(-14),
     lineItems: [
-      { description: 'Acupuncture Initial — 1st 15 min', cptCode: '97810', units: 1, amount: 80 },
-      { description: 'Acupuncture Add-on — ea addl 15 min', cptCode: '97811', units: 2, amount: 40 },
+      { description: 'Acupuncture w/o E-Stim — 1st 15 min', cptCode: '97810', units: 1, amount: 75 },
+      { description: 'Acupuncture w/o E-Stim — ea addl 15 min', cptCode: '97811', units: 2, amount: 70 },
     ],
-    total: 120,
+    total: 215,
     paid: true,
     paymentMethod: PAYMENT_METHOD.INSURANCE,
     isSuperbill: false,
@@ -901,10 +930,10 @@ export const seedInvoices = [
     visitId: 'v2',
     date: offsetDate(-13),
     lineItems: [
-      { description: 'Acupuncture Initial — 1st 15 min', cptCode: '97810', units: 1, amount: 80 },
-      { description: 'Acupuncture Add-on — ea addl 15 min', cptCode: '97811', units: 1, amount: 20 },
+      { description: 'Acupuncture w/o E-Stim — 1st 15 min', cptCode: '97810', units: 1, amount: 75 },
+      { description: 'Acupuncture w/o E-Stim — ea addl 15 min', cptCode: '97811', units: 2, amount: 70 },
     ],
-    total: 100,
+    total: 215,
     paid: true,
     paymentMethod: PAYMENT_METHOD.INSURANCE,
     isSuperbill: false,
@@ -915,10 +944,10 @@ export const seedInvoices = [
     visitId: 'v3',
     date: offsetDate(-11),
     lineItems: [
-      { description: 'Acupuncture Initial — 1st 15 min', cptCode: '97810', units: 1, amount: 80 },
-      { description: 'Cupping Therapy', cptCode: '97140', units: 1, amount: 30 },
+      { description: 'Acupuncture w/o E-Stim — 1st 15 min', cptCode: '97810', units: 1, amount: 75 },
+      { description: 'Acupuncture w/o E-Stim — ea addl 15 min', cptCode: '97811', units: 3, amount: 70 },
     ],
-    total: 110,
+    total: 285,
     paid: false,
     paymentMethod: null,
     isSuperbill: false,
@@ -929,7 +958,7 @@ export const seedInvoices = [
     visitId: 'v4',
     date: offsetDate(-16),
     lineItems: [
-      { description: 'Acupuncture — Self Pay', cptCode: '97810', units: 1, amount: 80 },
+      { description: 'Acupuncture — Self-Pay Flat Rate', cptCode: '97810', units: 1, amount: 80 },
     ],
     total: 80,
     paid: true,
@@ -943,7 +972,7 @@ export const seedInvoices = [
     visitId: 'v5',
     date: offsetDate(-14),
     lineItems: [
-      { description: 'Acupuncture — Self Pay', cptCode: '97810', units: 1, amount: 80 },
+      { description: 'Acupuncture — Self-Pay Flat Rate', cptCode: '97810', units: 1, amount: 80 },
     ],
     total: 80,
     paid: true,
@@ -956,10 +985,10 @@ export const seedInvoices = [
     visitId: 'v6',
     date: offsetDate(-9),
     lineItems: [
-      { description: 'Acupuncture Initial — 1st 15 min', cptCode: '97810', units: 1, amount: 80 },
-      { description: 'E-Stim', cptCode: '97813', units: 1, amount: 40 },
+      { description: 'Acupuncture w/ E-Stim — 1st 15 min', cptCode: '97813', units: 1, amount: 90 },
+      { description: 'Acupuncture w/ E-Stim — ea addl 15 min', cptCode: '97814', units: 2, amount: 80 },
     ],
-    total: 120,
+    total: 250,
     paid: false,
     paymentMethod: null,
     isSuperbill: false,
@@ -970,7 +999,7 @@ export const seedInvoices = [
     visitId: 'v7',
     date: offsetDate(-32),
     lineItems: [
-      { description: 'Acupuncture — Self Pay', cptCode: '97810', units: 1, amount: 80 },
+      { description: 'Acupuncture — Self-Pay Flat Rate', cptCode: '97810', units: 1, amount: 80 },
     ],
     total: 80,
     paid: true,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
-import { Lightbulb, Save, ChevronDown, ChevronUp, Sparkles, Loader2, Wand2, Info, X } from 'lucide-react'
+import { Lightbulb, Save, ChevronDown, ChevronUp, Sparkles, Loader2, Wand2, Info, X, PenLine, Lock } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { useApp } from '@/context/AppContext'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,18 @@ O: [TCM assessment findings — pulse, tongue, palpation, relevant exam]
 A: [TCM diagnosis — pattern identification, channel diagnosis]
 
 P: [Treatment applied — points, modalities, herbal formula, home care. Follow-up plan.]`
+
+// Terms that flag an insurance-facing field as containing TCM language
+const TCM_TERMS = [
+  'qi ', ' qi', 'yin ', 'yang ', 'stagnation', 'deficiency', 'blockage',
+  'dampness', 'phlegm', 'liver qi', 'kidney yang', 'kidney yin', 'spleen qi',
+  'blood stasis', 'cold invasion', 'heat pattern', 'cold pattern',
+]
+
+function containsTcmTerms(text) {
+  const lower = text.toLowerCase()
+  return TCM_TERMS.some((t) => lower.includes(t))
+}
 
 const MODALITY_OPTIONS = [
   'Acupuncture', 'E-Stim', 'Deep Tissue Massage',
@@ -78,7 +90,8 @@ export default function Visits() {
   const plan = patient ? treatmentPlans.find((tp) => tp.patientId === patient.id) : null
 
   const [form, setForm] = useState({
-    visitDate: existingVisit?.date ?? '2026-06-21',
+    visitDate: existingVisit?.date ?? new Date().toISOString().slice(0, 10),
+    westernDiagnosis: existingVisit?.westernDiagnosis ?? '',
     chiefComplaint: existingVisit?.chiefComplaint ?? '',
     painLevel: existingVisit?.painLevel ?? 5,
     pulseRate: existingVisit?.pulseRate ?? 'Normal',
@@ -115,7 +128,8 @@ export default function Visits() {
   useEffect(() => {
     if (!existingVisit) return
     setForm({
-      visitDate: existingVisit.date ?? '2026-06-21',
+      visitDate: existingVisit.date ?? new Date().toISOString().slice(0, 10),
+      westernDiagnosis: existingVisit.westernDiagnosis ?? '',
       chiefComplaint: existingVisit.chiefComplaint ?? '',
       painLevel: existingVisit.painLevel ?? 5,
       pulseRate: existingVisit.pulseRate ?? 'Normal',
@@ -356,16 +370,22 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
     }
   }
 
-  function handleSave() {
-    if (!patient) return
+  const isSigned = existingVisit?.status === 'signed'
 
+  function buildVisitData(status) {
     const { visitDate, ...formData } = form
-    const visitData = {
+    return {
       ...formData,
+      status,
       appointmentId: apptId ?? null,
-      patientId: patient.id,
+      patientId: patient?.id,
       date: apptId ? appointment.datetime.slice(0, 10) : visitDate,
     }
+  }
+
+  function handleSave() {
+    if (!patient) return
+    const visitData = buildVisitData('draft')
 
     if (existingVisit) {
       updateVisit(existingVisit.id, visitData)
@@ -382,6 +402,32 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
     }
 
     setSaved(true)
+  }
+
+  function handleSaveAndSign() {
+    if (!patient) return
+    const visitData = buildVisitData('signed')
+
+    if (existingVisit) {
+      updateVisit(existingVisit.id, visitData)
+    } else {
+      const id = `v${Date.now()}`
+      addVisit({ id, ...visitData })
+
+      if (apptId) {
+        updateAppointment(apptId, { status: APPOINTMENT_STATUS.COMPLETED })
+        if (ins && ins.coverageStatus === COVERAGE_STATUS.COVERED) {
+          updateInsurance(patient.id, { visitsUsed: ins.visitsUsed + 1 })
+        }
+      }
+    }
+
+    setSaved(true)
+  }
+
+  function handleSignNote() {
+    if (!existingVisit) return
+    updateVisit(existingVisit.id, { status: 'signed' })
   }
 
   // No context — show list of recent visits
@@ -511,11 +557,31 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
           {(draftingNote || diagnosisLoading || homeCareLoading || formulaLoading) && (
             <span className="text-xs text-muted-foreground">AI is thinking — you can save at any time</span>
           )}
-          {saved && <span className="text-sm text-teal-600">Saved ✓</span>}
-          <Button onClick={handleSave}>
-            <Save className="h-4 w-4" />
-            Save Note
-          </Button>
+          {isSigned ? (
+            <div className="flex items-center gap-1.5 rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-700">
+              <Lock className="h-3.5 w-3.5" />
+              Signed — Read Only
+            </div>
+          ) : (
+            <>
+              {saved && <span className="text-sm text-teal-600">Saved ✓</span>}
+              <Button variant="outline" onClick={handleSave}>
+                <Save className="h-4 w-4" />
+                Save Draft
+              </Button>
+              {existingVisit ? (
+                <Button onClick={handleSignNote} className="bg-teal-600 hover:bg-teal-700">
+                  <PenLine className="h-4 w-4" />
+                  Sign Note
+                </Button>
+              ) : (
+                <Button onClick={handleSaveAndSign} className="bg-teal-600 hover:bg-teal-700">
+                  <PenLine className="h-4 w-4" />
+                  Save & Sign
+                </Button>
+              )}
+            </>
+          )}
         </div>
       </div>
 
@@ -540,18 +606,30 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
       <div className="grid grid-cols-3 gap-5">
         {/* Main form */}
         <div className="col-span-2 space-y-5">
+          {/* Insurance-facing section header */}
+          <div className="flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+            <Info className="h-3.5 w-3.5 shrink-0" />
+            <span><span className="font-medium">Submitted to insurance — use Western medical terms only.</span> TCM terminology in the fields below will trigger claim rejection.</span>
+          </div>
+
           {/* Subjective */}
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Subjective</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
-                <Label>Chief Complaint</Label>
+                <Label>Chief Complaint <span className="text-xs font-normal text-muted-foreground">(Western language — submitted to insurance)</span></Label>
                 <Textarea
                   value={form.chiefComplaint}
                   onChange={(e) => set('chiefComplaint', e.target.value)}
                   rows={2}
-                  placeholder="What the patient reports today…"
+                  placeholder="e.g. Lower back pain radiating to left leg, 6/10, worse with flexion…"
+                  disabled={isSigned}
                 />
+                {containsTcmTerms(form.chiefComplaint) && (
+                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                    Insurance requires Western medical terms here — move TCM language (qi, yin/yang, stagnation, etc.) to the clinical notes section below.
+                  </p>
+                )}
                 {!existingVisit && plan?.primaryComplaint && !planComplaintDismissed && !form.chiefComplaint.trim() && (
                   <div className="flex items-center justify-between rounded-md border border-teal-200 bg-teal-50 px-3 py-2 text-xs">
                     <span className="text-teal-800">From treatment plan: <span className="font-medium">{plan.primaryComplaint}</span></span>
@@ -561,6 +639,15 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                     </div>
                   </div>
                 )}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Western Diagnosis / ICD-10 <span className="text-xs font-normal text-muted-foreground">(submitted to insurance)</span></Label>
+                <Input
+                  value={form.westernDiagnosis}
+                  onChange={(e) => set('westernDiagnosis', e.target.value)}
+                  placeholder="e.g. M54.50 — Low back pain, unspecified"
+                  disabled={isSigned}
+                />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -574,6 +661,7 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                   value={form.painLevel}
                   onChange={(e) => set('painLevel', Number(e.target.value))}
                   className="w-full accent-teal-600"
+                  disabled={isSigned}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>1 (minimal)</span><span>10 (severe)</span>
@@ -581,6 +669,16 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
               </div>
             </CardContent>
           </Card>
+
+          {/* Internal clinical record divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 border-t border-dashed border-zinc-300" />
+            <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-400">
+              <Lock className="h-3 w-3" />
+              Internal Clinical Record — Not submitted to insurance
+            </span>
+            <div className="flex-1 border-t border-dashed border-zinc-300" />
+          </div>
 
           {/* Objective — TCM Assessment */}
           <Card>
@@ -605,13 +703,13 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pulse</p>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Rate</Label>
-                    <Select value={form.pulseRate} onChange={(e) => set('pulseRate', e.target.value)}>
+                    <Select value={form.pulseRate} onChange={(e) => set('pulseRate', e.target.value)} disabled={isSigned}>
                       {['Normal', 'Rapid', 'Slow'].map((v) => <option key={v} value={v}>{v}</option>)}
                     </Select>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Quality</Label>
-                    <Select value={form.pulseQuality} onChange={(e) => set('pulseQuality', e.target.value)}>
+                    <Select value={form.pulseQuality} onChange={(e) => set('pulseQuality', e.target.value)} disabled={isSigned}>
                       {['Floating', 'Deep', 'Wiry', 'Slippery', 'Thin', 'Choppy'].map((v) => <option key={v} value={v}>{v}</option>)}
                     </Select>
                   </div>
@@ -620,13 +718,13 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tongue</p>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Body</Label>
-                    <Select value={form.tongueBody} onChange={(e) => set('tongueBody', e.target.value)}>
+                    <Select value={form.tongueBody} onChange={(e) => set('tongueBody', e.target.value)} disabled={isSigned}>
                       {['Pale', 'Pink', 'Red', 'Purple', 'Dusky'].map((v) => <option key={v} value={v}>{v}</option>)}
                     </Select>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Coating</Label>
-                    <Select value={form.tongueCoating} onChange={(e) => set('tongueCoating', e.target.value)}>
+                    <Select value={form.tongueCoating} onChange={(e) => set('tongueCoating', e.target.value)} disabled={isSigned}>
                       {['None', 'Thin White', 'Thick White', 'Yellow', 'Dry', 'Wet'].map((v) => <option key={v} value={v}>{v}</option>)}
                     </Select>
                   </div>
@@ -651,23 +749,26 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                   value={form.meridians}
                   onChange={(e) => set('meridians', e.target.value)}
                   placeholder="e.g. Bladder, Kidney, Governing Vessel"
+                  disabled={isSigned}
                 />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>Acupuncture Points</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSuggestPoints}
-                    className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800"
-                  >
-                    <Lightbulb className="h-3.5 w-3.5" />
-                    Suggest Points
-                  </Button>
+                  {!isSigned && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSuggestPoints}
+                      className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800"
+                    >
+                      <Lightbulb className="h-3.5 w-3.5" />
+                      Suggest Points
+                    </Button>
+                  )}
                 </div>
-                <PointBadgeInput value={form.pointsUsed} onChange={(pts) => set('pointsUsed', pts)} />
+                <PointBadgeInput value={form.pointsUsed} onChange={(pts) => set('pointsUsed', pts)} disabled={isSigned} />
                 {suggestHint && (
                   <p className="text-xs text-amber-600">{suggestHint}</p>
                 )}
@@ -679,8 +780,9 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                     <button
                       key={mod}
                       type="button"
-                      onClick={() => toggleModality(mod)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      onClick={() => !isSigned && toggleModality(mod)}
+                      disabled={isSigned}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
                         form.modalities.includes(mod)
                           ? 'bg-teal-600 text-white'
                           : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
@@ -694,25 +796,28 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>Treatment Strategy</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSuggestDiagnosis}
-                    disabled={diagnosisLoading}
-                    className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800 disabled:opacity-60"
-                  >
-                    {diagnosisLoading
-                      ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Suggesting…</>
-                      : <><Sparkles className="h-3.5 w-3.5" />Suggest Diagnosis</>
-                    }
-                  </Button>
+                  {!isSigned && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSuggestDiagnosis}
+                      disabled={diagnosisLoading}
+                      className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800 disabled:opacity-60"
+                    >
+                      {diagnosisLoading
+                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Suggesting…</>
+                        : <><Sparkles className="h-3.5 w-3.5" />Suggest Diagnosis</>
+                      }
+                    </Button>
+                  )}
                 </div>
                 <Textarea
                   value={form.treatmentStrategy}
                   onChange={(e) => set('treatmentStrategy', e.target.value)}
                   rows={2}
                   placeholder="TCM strategy and rationale…"
+                  disabled={isSigned}
                 />
                 {diagnosisSuggestion && (
                   <div className="rounded-md border border-teal-200 bg-teal-50 p-3 text-xs">
@@ -737,24 +842,27 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>Herbal Formula</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSuggestFormula}
-                    disabled={formulaLoading}
-                    className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800 disabled:opacity-60"
-                  >
-                    {formulaLoading
-                      ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Suggesting…</>
-                      : <><Sparkles className="h-3.5 w-3.5" />Suggest Formula</>
-                    }
-                  </Button>
+                  {!isSigned && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSuggestFormula}
+                      disabled={formulaLoading}
+                      className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800 disabled:opacity-60"
+                    >
+                      {formulaLoading
+                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Suggesting…</>
+                        : <><Sparkles className="h-3.5 w-3.5" />Suggest Formula</>
+                      }
+                    </Button>
+                  )}
                 </div>
                 <Input
                   value={form.herbalFormula}
                   onChange={(e) => set('herbalFormula', e.target.value)}
                   placeholder="e.g. Du Huo Ji Sheng Wan"
+                  disabled={isSigned}
                 />
                 {formulaSuggestion && (
                   <div className="rounded-md border border-teal-200 bg-teal-50 p-3 text-xs">
@@ -783,25 +891,28 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>Home Care</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSuggestHomeCare}
-                    disabled={homeCareLoading}
-                    className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800 disabled:opacity-60"
-                  >
-                    {homeCareLoading
-                      ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Suggesting…</>
-                      : <><Lightbulb className="h-3.5 w-3.5" />Suggest</>
-                    }
-                  </Button>
+                  {!isSigned && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSuggestHomeCare}
+                      disabled={homeCareLoading}
+                      className="h-7 gap-1 text-xs text-teal-700 hover:text-teal-800 disabled:opacity-60"
+                    >
+                      {homeCareLoading
+                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Suggesting…</>
+                        : <><Lightbulb className="h-3.5 w-3.5" />Suggest</>
+                      }
+                    </Button>
+                  )}
                 </div>
                 <Textarea
                   value={form.homeCareRecommendations}
                   onChange={(e) => set('homeCareRecommendations', e.target.value)}
                   rows={2}
                   placeholder="Stretches, ice, activity…"
+                  disabled={isSigned}
                 />
                 {homeCareSuggestion && (
                   <div className="rounded-md border border-teal-200 bg-teal-50 p-3 text-xs">
@@ -840,7 +951,7 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                 <CardTitle className="text-base">SOAP Note</CardTitle>
                 {showSoap ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
-              {draftingNote ? (
+              {!isSigned && (draftingNote ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -862,7 +973,7 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                   <Sparkles className="h-3.5 w-3.5" />
                   Draft with AI
                 </Button>
-              )}
+              ))}
             </div>
             {showSoap && (
               <CardContent>
@@ -876,6 +987,7 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
                   onChange={(e) => set('soapNote', e.target.value)}
                   rows={10}
                   className="font-mono text-xs"
+                  disabled={isSigned}
                 />
                 <p className="mt-2 text-xs text-muted-foreground">
                   {draftingNote ? 'AI is writing…' : 'Edit and save manually — nothing is auto-saved.'}
