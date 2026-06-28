@@ -1,5 +1,5 @@
 # AccuWorld — Concrete Build Roadmap
-> **Created:** 2026-06-27
+> **Created:** 2026-06-27 · **Last updated:** 2026-06-28
 
 **Synthesized from:** Post-feedback pivot (practitioner session, June 26 2026) + Production transition blueprint  
 **Practitioner:** Leonid Belenitsky, M.S., L.Ac. — Acupuncture & Karma Yoga Institute, Monroe TWP, NJ  
@@ -30,11 +30,11 @@ Next demo      Commitment demo        Beta launch            General availabilit
 
 ---
 
-## Phase 0 — Prototype Fixes (Before Next Demo)
+## Phase 0 — Prototype Fixes ✅ COMPLETE (2026-06-28)
 **Duration:** 1–2 weeks  
 **Goal:** Eliminate the credibility gaps that a practitioner will immediately spot. These are quick, high-signal fixes.
 
-### 0.1 Fix CPT Codes in Billing
+### 0.1 Fix CPT Codes in Billing ✅
 The current billing module has wrong or placeholder procedure codes. Replace with the 5 codes Leonid actually uses:
 
 | CPT Code | Description | Default Rate |
@@ -47,7 +47,7 @@ The current billing module has wrong or placeholder procedure codes. Replace wit
 
 Add a **Units** field to each billing line (1 unit = 15 min). Typical visit = 3 units (45 min). Total charge auto-calculates. Remove all PT-specific codes from defaults.
 
-### 0.2 Add Missing Patient Demographic Fields
+### 0.2 Add Missing Patient Demographic Fields ✅
 Fields the practitioner considers essential that are currently missing from Add Patient:
 
 - Title (Mr. / Mrs. / Ms. / Dr.)
@@ -60,14 +60,14 @@ Fields the practitioner considers essential that are currently missing from Add 
 
 On the patient insurance section, promote **Subscriber ID** and **Group Number** to be the two most prominent fields — these are what the practitioner checks first when a patient presents their card.
 
-### 0.3 Update Seed Data to Match Reality
+### 0.3 Update Seed Data to Match Reality ✅
 - Replace generic payer names with NJ-relevant insurers: Horizon BCBS, Aetna, United, Cigna
 - Update billing seed invoices to use CPT codes 97810/97811/97813/97814
 - Update visit rates to match actual rates ($75–$90 initial, $70–$80 additional)
 - Medicare patients: flag as "acupuncture covered for chronic low back pain only, 12 sessions/year"
 - Medicaid patients: flag as "never covers acupuncture — self-pay"
 
-### 0.4 Add Note Draft / Signed State
+### 0.4 Add Note Draft / Signed State ✅
 Daily notes need a two-state lifecycle that mirrors how WebPT works:
 
 - **Draft** (default): Note is editable. No billing entry generated.
@@ -75,7 +75,7 @@ Daily notes need a two-state lifecycle that mirrors how WebPT works:
 - **Dashboard flag:** Count of unsigned notes with amber badge ("3 notes unsigned — claims pending")
 - In the prototype, "Signed" does not need to transmit to a real clearinghouse — it just marks the billing entry as ready.
 
-### 0.5 Separate TCM Terms from Insurance-Facing Fields
+### 0.5 Separate TCM Terms from Insurance-Facing Fields ✅
 Add a clear visual separator in the chart form:
 
 - **Insurance-facing section** (top): Chief Complaint (Western language), ICD-10 Diagnosis (new field — see Phase 1), CPT codes, Units. Label this: *"Submitted to insurance — use Western medical terms only."*
@@ -84,13 +84,15 @@ Add a clear visual separator in the chart form:
 
 **Phase 0 done when:** `npm run build` passes, demo walkthrough takes under 5 minutes, no CPT code or terminology errors visible.
 
+> ✅ **Phase 0 completed 2026-06-28.** All 5 tasks shipped. `npm run build` passes.
+
 ---
 
-## Phase 1 — Workflow Completeness (Commitment Demo)
+## Phase 1 — Workflow Completeness (Commitment Demo) 🔄 IN PROGRESS
 **Duration:** 4–6 weeks  
 **Goal:** Build the features that make AccuWorld a complete clinical workflow, not just a dashboard. This is the demo that gets Leonid to sign.
 
-### 1.1 Patient Intake Form (Digital 5-Page Packet)
+### 1.1 Patient Intake Form (Digital 5-Page Packet) ✅
 This is the single most important missing feature. Leonid's entire patient onboarding starts here. Without it, he cannot replace paper.
 
 Build a multi-step intake flow launched from "Add Patient." Runs on a clinic device. Five screens:
@@ -130,6 +132,8 @@ Build a multi-step intake flow launched from "Add Patient." Runs on a clinic dev
 - All require patient signature + date + initials where specified
 
 **After completion:** All intake data flows into the patient record. Practitioner reviews before finalizing. Signatures stored as timestamped records. Chief complaint from Screen 2 pre-fills the chart form's chief complaint field.
+
+> ✅ **1.1 completed 2026-06-28.** Route `/intake/:patientId` ships with all 5 screens and signature gates. Pain diagram uses interactive SVG. Demographics sync to patient record on completion. Entry points: PatientDetail header button + AddPatientDialog "Add & Start Intake →". Typed-name signatures (production will use HelloSign — Phase 2).
 
 ### 1.2 Case Management + ICD-10 Western Diagnosis
 Leonid organizes all treatment around Cases (e.g., "Neck Pain 2026"). This is how claims are filed. AccuWorld must adopt this model.
@@ -407,14 +411,18 @@ Get both policies before Phase 2 goes live. Do not wait until launch.
 
 ## Summary: What Gets Built, When, and Why
 
-| Phase | Duration | What | Why It Matters |
-|-------|----------|------|----------------|
-| 0 | 1–2 weeks | Fix CPT codes, demographics, note state, terminology separation | Credibility for next practitioner meeting |
-| 1 | 4–6 weeks | Full intake form, case management, ICD-10, attendance sheet | Complete the workflow; earn the commitment |
-| 2 | 3–4 months | HIPAA backend, RLS, MFA, audit log, immutable notes, e-signature | Legal to hold real patient data |
-| 3 | 2–3 months | Real eligibility (Claim.MD), real claims (837P), Stripe, subscriptions | Revenue-generating product |
+| Phase | Status | What | Why It Matters |
+|-------|--------|------|----------------|
+| 0 | ✅ Done (2026-06-28) | Fix CPT codes, demographics, note state, terminology separation | Credibility for next practitioner meeting |
+| 1 | 🔄 In progress | Full intake form ✅, case management, ICD-10, attendance sheet | Complete the workflow; earn the commitment |
+| 2 | ⏳ Not started | HIPAA backend, RLS, MFA, audit log, immutable notes, e-signature | Legal to hold real patient data |
+| 3 | ⏳ Not started | Real eligibility (Claim.MD), real claims (837P), Stripe, subscriptions | Revenue-generating product |
 
 **The commitment from Leonid comes at end of Phase 1.** Phases 2 and 3 are the production build that follows that commitment.
+
+---
+
+*Document created: 2026-06-27 · Last updated: 2026-06-28*
 
 ---
 
