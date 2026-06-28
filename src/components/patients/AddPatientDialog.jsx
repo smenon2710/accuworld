@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
@@ -23,6 +24,7 @@ const EMPTY = {
 
 export default function AddPatientDialog({ open, onOpenChange, onCreated }) {
   const { addPatient, addInsurance } = useApp()
+  const navigate = useNavigate()
   const [form, setForm] = useState(EMPTY)
 
   function set(field, value) {
@@ -223,6 +225,24 @@ export default function AddPatientDialog({ open, onOpenChange, onCreated }) {
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => {
+              if (!form.firstName || !form.lastName || !form.phone) return
+              const id = `p${Date.now()}`
+              addPatient({ ...form, id })
+              addInsurance({
+                id: `ins${Date.now()}`, patientId: id, payer: PAYERS.OTHER,
+                planName: '', memberId: '', groupNumber: '',
+                coverageStatus: COVERAGE_STATUS.UNVERIFIED,
+                acupunctureBenefit: 'unknown', visitsAuthorized: 0, visitsUsed: 0,
+                copay: 0, coinsurancePct: 0, deductibleMet: false,
+                authReferenceNumber: '', lastVerifiedDate: null, reverifyByDate: null, verificationNotes: '',
+              })
+              setForm(EMPTY)
+              onOpenChange(false)
+              navigate(`/intake/${id}`)
+            }}>
+              Add &amp; Start Intake →
+            </Button>
             <Button type="submit">Add Patient</Button>
           </DialogFooter>
         </form>

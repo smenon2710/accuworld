@@ -6,6 +6,7 @@ import {
   seedVisits,
   seedTreatmentPlans,
   seedInvoices,
+  seedIntakeForms,
 } from '@/data/seed'
 
 const AppContext = createContext(null)
@@ -41,6 +42,7 @@ export function AppProvider({ children }) {
     loadFromStorage('aw_plans', seedTreatmentPlans)
   )
   const [invoices, setInvoices] = useState(() => loadFromStorage('aw_invoices', seedInvoices))
+  const [intakeForms, setIntakeForms] = useState(() => loadFromStorage('aw_intakes', seedIntakeForms))
 
   const loginAs = useCallback((role) => {
     setLoggedInRoleState(role)
@@ -141,6 +143,19 @@ export function AppProvider({ children }) {
     })
   }, [])
 
+  // ── Intake Forms ──────────────────────────────────────────────────────────
+  const saveIntakeForm = useCallback((form) => {
+    setIntakeForms((prev) => {
+      const exists = prev.find((f) => f.patientId === form.patientId)
+      const next = exists
+        ? prev.map((f) => (f.patientId === form.patientId ? { ...f, ...form } : f))
+        : [...prev, form]
+      saveToStorage('aw_intakes', next)
+      console.log('[AppContext] saveIntakeForm:', form.patientId)
+      return next
+    })
+  }, [])
+
   // ── Invoices ──────────────────────────────────────────────────────────────
   const addInvoice = useCallback((invoice) => {
     setInvoices((prev) => {
@@ -167,6 +182,7 @@ export function AppProvider({ children }) {
     setVisits(seedVisits)
     setTreatmentPlans(seedTreatmentPlans)
     setInvoices(seedInvoices)
+    setIntakeForms(seedIntakeForms)
     setLoggedInRoleState(null)
     localStorage.clear()
     console.log('[AppContext] reset to seed data')
@@ -182,6 +198,7 @@ export function AppProvider({ children }) {
     visits,
     treatmentPlans,
     invoices,
+    intakeForms,
     addPatient,
     updatePatient,
     updateInsurance,
@@ -193,6 +210,7 @@ export function AppProvider({ children }) {
     saveTreatmentPlan,
     addInvoice,
     updateInvoice,
+    saveIntakeForm,
     resetToSeedData,
   }
 

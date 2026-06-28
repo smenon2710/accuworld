@@ -1008,3 +1008,6 @@ export const seedInvoices = [
     isSuperbill: false,
   },
 ]
+
+// Intake forms — empty by default; completed forms saved to localStorage
+export const seedIntakeForms = []

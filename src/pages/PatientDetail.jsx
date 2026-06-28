@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft, Phone, Mail, CalendarDays, ChevronDown, ChevronUp,
-  Edit2, AlertCircle, Clock, Archive, RotateCcw, Plus,
+  Edit2, AlertCircle, Clock, Archive, RotateCcw, Plus, ClipboardList,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
@@ -49,7 +49,7 @@ function appointmentStatusBadge(status) {
 export default function PatientDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { patients, insuranceProfiles, appointments, visits, treatmentPlans, updatePatient, loggedInRole } = useApp()
+  const { patients, insuranceProfiles, appointments, visits, treatmentPlans, intakeForms, updatePatient, loggedInRole } = useApp()
   const canChart = loggedInRole !== 'frontdesk'
   const [showAdditional, setShowAdditional] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
@@ -118,6 +118,20 @@ export default function PatientDetail() {
             <Badge variant={patient.status === 'active' ? 'success' : 'neutral'} className="capitalize">
               {patient.status}
             </Badge>
+            {(() => {
+              const intake = intakeForms.find((f) => f.patientId === id)
+              return intake ? (
+                <Button variant="outline" size="sm" onClick={() => navigate(`/intake/${id}`)}>
+                  <ClipboardList className="h-3.5 w-3.5 text-teal-600" />
+                  <span className="text-teal-700">Intake Complete</span>
+                </Button>
+              ) : (
+                <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => navigate(`/intake/${id}`)}>
+                  <ClipboardList className="h-3.5 w-3.5" />
+                  Intake Form
+                </Button>
+              )
+            })()}
             <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
               <Edit2 className="h-3.5 w-3.5" /> Edit
             </Button>

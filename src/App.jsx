@@ -10,6 +10,7 @@ import Schedule from '@/pages/Schedule'
 import Visits from '@/pages/Visits'
 import TreatmentPlans from '@/pages/TreatmentPlans'
 import Billing from '@/pages/Billing'
+import Intake from '@/pages/Intake'
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/intake/:patientId" element={<Intake />} />
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/patients" element={<Patients />} />
