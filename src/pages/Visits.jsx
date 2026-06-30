@@ -76,7 +76,7 @@ export default function Visits() {
   const navigate = useNavigate()
   const apptId = searchParams.get('appt')
   const patientIdParam = searchParams.get('patient')
-  const { patients, appointments, visits, insuranceProfiles, treatmentPlans, addVisit, updateVisit, updateAppointment, updateInsurance } = useApp()
+  const { patients, appointments, visits, insuranceProfiles, treatmentPlans, cases, addVisit, updateVisit, updateAppointment, updateInsurance } = useApp()
 
   const appointment = apptId ? appointments.find((a) => a.id === apptId) : null
   const existingVisit = appointment ? visits.find((v) => v.appointmentId === apptId) : null
@@ -88,8 +88,10 @@ export default function Visits() {
     : null
   const ins = patient ? insuranceProfiles.find((i) => i.patientId === patient.id) : null
   const plan = patient ? treatmentPlans.find((tp) => tp.patientId === patient.id) : null
+  const patientCases = patient ? cases.filter((c) => c.patientId === patient.id && c.status === 'active') : []
 
   const [form, setForm] = useState({
+    caseId: existingVisit?.caseId ?? '',
     visitDate: existingVisit?.date ?? new Date().toISOString().slice(0, 10),
     westernDiagnosis: existingVisit?.westernDiagnosis ?? '',
     chiefComplaint: existingVisit?.chiefComplaint ?? '',
@@ -128,6 +130,7 @@ export default function Visits() {
   useEffect(() => {
     if (!existingVisit) return
     setForm({
+      caseId: existingVisit.caseId ?? '',
       visitDate: existingVisit.date ?? new Date().toISOString().slice(0, 10),
       westernDiagnosis: existingVisit.westernDiagnosis ?? '',
       chiefComplaint: existingVisit.chiefComplaint ?? '',
@@ -156,6 +159,15 @@ export default function Visits() {
       ? form.modalities.filter((m) => m !== mod)
       : [...form.modalities, mod]
     )
+  }
+
+  function handleCaseChange(caseId) {
+    set('caseId', caseId)
+    if (!caseId) return
+    const selectedCase = cases.find((c) => c.id === caseId)
+    if (selectedCase?.icd10Code && !form.westernDiagnosis.trim()) {
+      set('westernDiagnosis', `${selectedCase.icd10Code} — ${selectedCase.icd10Label}`)
+    }
   }
 
   function handleSuggestPoints() {
@@ -606,6 +618,46 @@ Return only: "Formula Name — one-sentence rationale". Nothing else.`
       <div className="grid grid-cols-3 gap-5">
         {/* Main form */}
         <div className="col-span-2 space-y-5">
+          {/* Case selector */}
+          {patientCases.length > 0 && (
+            <div className="flex items-center gap-3 rounded-md border bg-white px-3 py-2.5">
+              <Label className="shrink-0 text-sm font-medium">Case</Label>
+              <Select
+                value={form.caseId}
+                onChange={(e) => handleCaseChange(e.target.value)}
+                disabled={isSigned}
+                className="flex-1"
+              >
+                <option value="">— Select a case —</option>
+                {patientCases.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}{c.icd10Code ? ` (${c.icd10Code})` : ''}
+                  </option>
+                ))}
+              </Select>
+              {form.caseId && (() => {
+                const selectedCase = cases.find((c) => c.id === form.caseId)
+                return selectedCase ? (
+                  <span className="text-xs text-muted-foreground shrink-0">{selectedCase.icd10Code} — {selectedCase.icd10Label}</span>
+                ) : null
+              })()}
+            </div>
+          )}
+          {patientCases.length === 0 && !isSigned && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>No cases on file for this patient.</span>
+              {patient && (
+                <button
+                  type="button"
+                  className="text-teal-700 hover:underline"
+                  onClick={() => navigate(`/patients/${patient.id}`)}
+                >
+                  Create a case →
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Insurance-facing section header */}
           <div className="flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
             <Info className="h-3.5 w-3.5 shrink-0" />

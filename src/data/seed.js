@@ -62,6 +62,44 @@ export const PAYMENT_METHOD = {
 
 export const SELF_PAY_RATE = 80
 
+// ─── ICD-10 Curated List (acupuncture-relevant codes) ─────────────────────────
+
+export const ICD10_CODES = [
+  { code: 'M54.50', label: 'Low back pain, unspecified' },
+  { code: 'M54.51', label: 'Vertebrogenic low back pain' },
+  { code: 'M54.2',  label: 'Cervicalgia (neck pain)' },
+  { code: 'M54.3',  label: 'Sciatica' },
+  { code: 'M54.4',  label: 'Lumbago with sciatica' },
+  { code: 'M25.511', label: 'Pain in right shoulder' },
+  { code: 'M25.512', label: 'Pain in left shoulder' },
+  { code: 'M25.561', label: 'Pain in right knee' },
+  { code: 'M25.562', label: 'Pain in left knee' },
+  { code: 'M79.1',  label: 'Myalgia' },
+  { code: 'G43.909', label: 'Migraine, unspecified' },
+  { code: 'R51.9',  label: 'Headache, unspecified' },
+  { code: 'G89.29', label: 'Other chronic pain' },
+  { code: 'G47.00', label: 'Insomnia, unspecified' },
+  { code: 'F41.1',  label: 'Generalized anxiety disorder' },
+  { code: 'N94.6',  label: 'Dysmenorrhea, unspecified' },
+  { code: 'M79.3',  label: 'Panniculitis' },
+]
+
+export const CAUSE_OF_INJURY = {
+  NONE: 'none',
+  CAR_AT_FAULT: 'car_at_fault',
+  CAR_NO_FAULT: 'car_no_fault',
+  WORK_INJURY: 'work_injury',
+  SURGICAL: 'surgical',
+}
+
+export const CAUSE_OF_INJURY_LABELS = {
+  none: 'None',
+  car_at_fault: 'Car accident — at fault',
+  car_no_fault: 'Car accident — no fault',
+  work_injury: 'Work injury',
+  surgical: 'Surgical related',
+}
+
 // ─── Patients ─────────────────────────────────────────────────────────────────
 
 export const seedPatients = [
@@ -539,6 +577,7 @@ export const seedVisits = [
   {
     id: 'v1',
     status: 'draft',
+    caseId: 'c1',
     westernDiagnosis: '',
     appointmentId: 'a9',
     patientId: 'p1',
@@ -560,6 +599,7 @@ export const seedVisits = [
   {
     id: 'v2',
     status: 'draft',
+    caseId: 'c2',
     westernDiagnosis: '',
     appointmentId: 'a10',
     patientId: 'p2',
@@ -581,6 +621,7 @@ export const seedVisits = [
   {
     id: 'v3',
     status: 'draft',
+    caseId: 'c6',
     westernDiagnosis: '',
     appointmentId: 'a11',
     patientId: 'p6',
@@ -602,6 +643,7 @@ export const seedVisits = [
   {
     id: 'v4',
     status: 'signed',
+    caseId: 'c4',
     westernDiagnosis: 'M79.1 — Myalgia (plantar fasciitis)',
     appointmentId: 'a12',
     patientId: 'p4',
@@ -623,6 +665,7 @@ export const seedVisits = [
   {
     id: 'v5',
     status: 'signed',
+    caseId: 'c7',
     westernDiagnosis: 'G89.29 — Other chronic pain (fibromyalgia)',
     appointmentId: 'a13',
     patientId: 'p7',
@@ -644,6 +687,7 @@ export const seedVisits = [
   {
     id: 'v6',
     status: 'draft',
+    caseId: 'c8',
     westernDiagnosis: '',
     appointmentId: 'a14',
     patientId: 'p8',
@@ -665,6 +709,7 @@ export const seedVisits = [
   {
     id: 'v7',
     status: 'signed',
+    caseId: 'c5',
     westernDiagnosis: 'R51.9 — Headache, unspecified',
     appointmentId: 'a15',
     patientId: 'p5',
@@ -688,6 +733,7 @@ export const seedVisits = [
   {
     id: 'v8',
     status: 'signed',
+    caseId: 'c1',
     westernDiagnosis: 'M54.50 — Low back pain, unspecified',
     appointmentId: 'ahist1',
     patientId: 'p1',
@@ -709,6 +755,7 @@ export const seedVisits = [
   {
     id: 'v9',
     status: 'signed',
+    caseId: 'c1',
     westernDiagnosis: 'M54.50 — Low back pain, unspecified',
     appointmentId: 'ahist2',
     patientId: 'p1',
@@ -730,6 +777,7 @@ export const seedVisits = [
   {
     id: 'v10',
     status: 'signed',
+    caseId: 'c1',
     westernDiagnosis: 'M54.50 — Low back pain, unspecified',
     appointmentId: 'ahist3',
     patientId: 'p1',
@@ -751,6 +799,7 @@ export const seedVisits = [
   {
     id: 'v11',
     status: 'signed',
+    caseId: 'c1',
     westernDiagnosis: 'M54.50 — Low back pain, unspecified',
     appointmentId: 'ahist4',
     patientId: 'p1',
@@ -774,6 +823,7 @@ export const seedVisits = [
   {
     id: 'v12',
     status: 'signed',
+    caseId: 'c2',
     westernDiagnosis: 'M54.31 — Sciatica, right side',
     appointmentId: 'ahist5',
     patientId: 'p2',
@@ -795,6 +845,7 @@ export const seedVisits = [
   {
     id: 'v13',
     status: 'signed',
+    caseId: 'c2',
     westernDiagnosis: 'M54.31 — Sciatica, right side',
     appointmentId: 'ahist6',
     patientId: 'p2',
@@ -816,6 +867,7 @@ export const seedVisits = [
   {
     id: 'v14',
     status: 'signed',
+    caseId: 'c2',
     westernDiagnosis: 'M54.31 — Sciatica, right side',
     appointmentId: 'ahist7',
     patientId: 'p2',
@@ -1006,6 +1058,67 @@ export const seedInvoices = [
     paymentMethod: PAYMENT_METHOD.ZELLE,
     transactionRef: 'ZLL-18374',
     isSuperbill: false,
+  },
+]
+
+// ─── Cases ────────────────────────────────────────────────────────────────────
+
+export const seedCases = [
+  {
+    id: 'c1', patientId: 'p1',
+    title: 'Low Back Pain 2026',
+    icd10Code: 'M54.50', icd10Label: 'Low back pain, unspecified',
+    dateOpened: offsetDate(-152), status: 'active',
+    insuranceId: 'ins1', causeOfInjury: 'none',
+  },
+  {
+    id: 'c2', patientId: 'p2',
+    title: 'Right Sciatica 2025',
+    icd10Code: 'M54.3', icd10Label: 'Sciatica',
+    dateOpened: offsetDate(-199), status: 'active',
+    insuranceId: 'ins2', causeOfInjury: 'none',
+  },
+  {
+    id: 'c3', patientId: 'p3',
+    title: 'Cervical Tension 2026',
+    icd10Code: 'M54.2', icd10Label: 'Cervicalgia (neck pain)',
+    dateOpened: offsetDate(-30), status: 'active',
+    insuranceId: 'ins3', causeOfInjury: 'none',
+  },
+  {
+    id: 'c4', patientId: 'p4',
+    title: 'Bilateral Plantar Fasciitis 2026',
+    icd10Code: 'M79.1', icd10Label: 'Myalgia',
+    dateOpened: offsetDate(-112), status: 'active',
+    insuranceId: 'ins4', causeOfInjury: 'none',
+  },
+  {
+    id: 'c5', patientId: 'p5',
+    title: 'Tension Headaches 2026',
+    icd10Code: 'R51.9', icd10Label: 'Headache, unspecified',
+    dateOpened: offsetDate(-90), status: 'active',
+    insuranceId: 'ins5', causeOfInjury: 'none',
+  },
+  {
+    id: 'c6', patientId: 'p6',
+    title: 'Piriformis Syndrome 2026',
+    icd10Code: 'G89.29', icd10Label: 'Other chronic pain',
+    dateOpened: offsetDate(-130), status: 'active',
+    insuranceId: 'ins6', causeOfInjury: 'none',
+  },
+  {
+    id: 'c7', patientId: 'p7',
+    title: 'Fibromyalgia Management 2026',
+    icd10Code: 'G89.29', icd10Label: 'Other chronic pain',
+    dateOpened: offsetDate(-288), status: 'active',
+    insuranceId: 'ins7', causeOfInjury: 'none',
+  },
+  {
+    id: 'c8', patientId: 'p8',
+    title: 'Acute Low Back Strain 2026',
+    icd10Code: 'M54.50', icd10Label: 'Low back pain, unspecified',
+    dateOpened: offsetDate(-16), status: 'active',
+    insuranceId: 'ins8', causeOfInjury: 'none',
   },
 ]
 

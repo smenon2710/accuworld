@@ -6,6 +6,7 @@ import {
   seedVisits,
   seedTreatmentPlans,
   seedInvoices,
+  seedCases,
   seedIntakeForms,
 } from '@/data/seed'
 
@@ -42,6 +43,7 @@ export function AppProvider({ children }) {
     loadFromStorage('aw_plans', seedTreatmentPlans)
   )
   const [invoices, setInvoices] = useState(() => loadFromStorage('aw_invoices', seedInvoices))
+  const [cases, setCases] = useState(() => loadFromStorage('aw_cases', seedCases))
   const [intakeForms, setIntakeForms] = useState(() => loadFromStorage('aw_intakes', seedIntakeForms))
 
   const loginAs = useCallback((role) => {
@@ -143,6 +145,25 @@ export function AppProvider({ children }) {
     })
   }, [])
 
+  // ── Cases ─────────────────────────────────────────────────────────────────
+  const addCase = useCallback((c) => {
+    setCases((prev) => {
+      const next = [...prev, c]
+      saveToStorage('aw_cases', next)
+      console.log('[AppContext] addCase:', c)
+      return next
+    })
+  }, [])
+
+  const updateCase = useCallback((id, changes) => {
+    setCases((prev) => {
+      const next = prev.map((c) => (c.id === id ? { ...c, ...changes } : c))
+      saveToStorage('aw_cases', next)
+      console.log('[AppContext] updateCase:', id, changes)
+      return next
+    })
+  }, [])
+
   // ── Intake Forms ──────────────────────────────────────────────────────────
   const saveIntakeForm = useCallback((form) => {
     setIntakeForms((prev) => {
@@ -182,6 +203,7 @@ export function AppProvider({ children }) {
     setVisits(seedVisits)
     setTreatmentPlans(seedTreatmentPlans)
     setInvoices(seedInvoices)
+    setCases(seedCases)
     setIntakeForms(seedIntakeForms)
     setLoggedInRoleState(null)
     localStorage.clear()
@@ -198,6 +220,7 @@ export function AppProvider({ children }) {
     visits,
     treatmentPlans,
     invoices,
+    cases,
     intakeForms,
     addPatient,
     updatePatient,
@@ -210,6 +233,8 @@ export function AppProvider({ children }) {
     saveTreatmentPlan,
     addInvoice,
     updateInvoice,
+    addCase,
+    updateCase,
     saveIntakeForm,
     resetToSeedData,
   }

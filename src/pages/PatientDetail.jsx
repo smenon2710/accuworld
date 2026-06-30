@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft, Phone, Mail, CalendarDays, ChevronDown, ChevronUp,
-  Edit2, AlertCircle, Clock, Archive, RotateCcw, Plus, ClipboardList,
+  Edit2, AlertCircle, Clock, Archive, RotateCcw, Plus, ClipboardList, Pencil,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
@@ -14,6 +14,7 @@ import { COVERAGE_STATUS, APPOINTMENT_STATUS, SELF_PAY_RATE } from '@/data/seed'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import EditPatientDialog from '@/components/patients/EditPatientDialog'
+import CaseDialog from '@/components/cases/CaseDialog'
 
 function formatDate(d) {
   if (!d) return '—'
@@ -49,10 +50,12 @@ function appointmentStatusBadge(status) {
 export default function PatientDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { patients, insuranceProfiles, appointments, visits, treatmentPlans, intakeForms, updatePatient, loggedInRole } = useApp()
+  const { patients, insuranceProfiles, appointments, visits, treatmentPlans, cases, intakeForms, updatePatient, addCase, updateCase, loggedInRole } = useApp()
   const canChart = loggedInRole !== 'frontdesk'
   const [showAdditional, setShowAdditional] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+  const [showCaseDialog, setShowCaseDialog] = useState(false)
+  const [editingCase, setEditingCase] = useState(null)
 
   const patient = patients.find((p) => p.id === id)
   if (!patient) {
@@ -76,6 +79,7 @@ export default function PatientDetail() {
     .filter((v) => v.patientId === id)
     .sort((a, b) => new Date(b.date) - new Date(a.date))
   const plan = treatmentPlans.find((tp) => tp.patientId === id)
+  const patientCases = cases.filter((c) => c.patientId === id).sort((a, b) => new Date(b.dateOpened) - new Date(a.dateOpened))
 
   const painChartData = [...patientVisits]
     .sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -298,6 +302,59 @@ export default function PatientDetail() {
                       Manage in Insurance Tracker →
                     </Link>
                   </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Cases */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Cases</CardTitle>
+                {canChart && (
+                  <Button size="sm" variant="outline" onClick={() => { setEditingCase(null); setShowCaseDialog(true) }}>
+                    <Plus className="h-3.5 w-3.5" /> New Case
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {patientCases.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No cases on file. Create a case to organize visits by diagnosis.</p>
+              ) : (
+                <div className="space-y-2">
+                  {patientCases.map((c) => {
+                    const visitCount = visits.filter((v) => v.caseId === c.id).length
+                    const ins = insuranceProfiles.find((i) => i.id === c.insuranceId)
+                    return (
+                      <div key={c.id} className="flex items-start justify-between rounded-md border p-3">
+                        <div className="space-y-0.5 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium truncate">{c.title}</p>
+                            <Badge variant={c.status === 'active' ? 'success' : 'neutral'} className="text-xs capitalize shrink-0">
+                              {c.status}
+                            </Badge>
+                          </div>
+                          {c.icd10Code && (
+                            <p className="text-xs text-muted-foreground font-mono">{c.icd10Code} — {c.icd10Label}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Opened {formatDate(c.dateOpened)} · {visitCount} visit{visitCount !== 1 ? 's' : ''}
+                            {ins && ` · ${ins.payer}`}
+                          </p>
+                        </div>
+                        {canChart && (
+                          <button
+                            className="ml-3 shrink-0 text-muted-foreground hover:text-zinc-900"
+                            onClick={() => { setEditingCase(c); setShowCaseDialog(true) }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
@@ -568,6 +625,21 @@ export default function PatientDetail() {
         onSave={(changes) => {
           updatePatient(id, changes)
           setShowEdit(false)
+        }}
+      />
+
+      <CaseDialog
+        open={showCaseDialog}
+        onOpenChange={setShowCaseDialog}
+        patientId={id}
+        insuranceProfiles={insuranceProfiles}
+        existingCase={editingCase}
+        onSave={(caseData) => {
+          if (editingCase) {
+            updateCase(editingCase.id, caseData)
+          } else {
+            addCase(caseData)
+          }
         }}
       />
     </div>
