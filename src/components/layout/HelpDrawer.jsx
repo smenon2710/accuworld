@@ -2,11 +2,41 @@ import { useState } from 'react'
 import { X, Square, CheckSquare, ShieldCheck, Clock, AlertCircle } from 'lucide-react'
 
 const DEMO_STEPS = [
-  { id: 1, label: 'Add a new patient', detail: 'Patients → + New Patient' },
-  { id: 2, label: 'Schedule an appointment', detail: 'Schedule → New Appointment' },
-  { id: 3, label: 'Confirm & complete the visit', detail: "Schedule → Today's Actions → Complete + Chart" },
-  { id: 4, label: 'Save the TCM chart', detail: 'Visit / Chart — fill SOAP note, save' },
-  { id: 5, label: 'Generate a superbill', detail: 'Billing → New Invoice → Print Superbill' },
+  {
+    id: 1,
+    label: 'Add patient + complete intake',
+    detail: 'Patients → New Patient → "Add & Start Intake →" — patient signs 5 screens on clinic device (HIPAA, medical history, pain diagram, consent, financial)',
+  },
+  {
+    id: 2,
+    label: 'Morning dashboard review',
+    detail: 'Dashboard — check today\'s schedule, insurance attention flags, and unsigned note count',
+  },
+  {
+    id: 3,
+    label: 'Run eligibility check',
+    detail: 'Insurance Tracker → "Check Eligibility" on the patient row — 1-second simulated result shows coverage, copay, and visits remaining',
+  },
+  {
+    id: 4,
+    label: 'Review patient case + ICD-10',
+    detail: 'Patient record → Cases section — view the active case title and ICD-10 diagnosis code; create or edit cases here',
+  },
+  {
+    id: 5,
+    label: 'Chart the treatment session',
+    detail: 'Schedule → Chart (or Patient → New Note) — Case pre-selected, Western Diagnosis auto-fills from ICD-10; fill TCM notes in the clinical section below the divider',
+  },
+  {
+    id: 6,
+    label: 'Sign the note',
+    detail: 'Visit / Chart → "Sign Note" — note locks and becomes billing-ready; unsigned count on Dashboard drops',
+  },
+  {
+    id: 7,
+    label: 'Close the invoice',
+    detail: 'Billing → find the visit invoice → "Mark Paid" — select payment method (cash/card/Zelle) and record transaction reference',
+  },
 ]
 
 const SCHEDULE_COLOR_GUIDE = [
@@ -40,9 +70,9 @@ const FLAG_GUIDE = [
 const PAGE_GUIDE = [
   { label: 'Dashboard', desc: 'Morning overview — insurance flags, schedule, revenue' },
   { label: 'Insurance', desc: 'Verify benefits, check eligibility, track authorized visits' },
-  { label: 'Patients', desc: 'Patient roster, profiles, pain trend charts' },
+  { label: 'Patients', desc: 'Patient roster, profiles, cases + ICD-10 diagnoses, pain trend charts, intake form' },
   { label: 'Schedule', desc: 'Month/week/day calendar, booking inbox, complete visits' },
-  { label: 'Visit / Chart', desc: 'TCM SOAP notes, acupuncture points, modalities' },
+  { label: 'Visit / Chart', desc: 'TCM SOAP notes, case + ICD-10 selector, acupuncture points, AI suggestions, sign/lock lifecycle' },
   { label: 'Treatment Plans', desc: 'Goals, frequency recommendation, session progress' },
   { label: 'Billing', desc: 'Invoices, CPT codes, mark paid, superbill printing' },
 ]

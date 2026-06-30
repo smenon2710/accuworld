@@ -1,5 +1,5 @@
 # AccuWorld — Concrete Build Roadmap
-> **Created:** 2026-06-27 · **Last updated:** 2026-06-28
+> **Created:** 2026-06-27 · **Last updated:** 2026-06-29
 
 **Synthesized from:** Post-feedback pivot (practitioner session, June 26 2026) + Production transition blueprint  
 **Practitioner:** Leonid Belenitsky, M.S., L.Ac. — Acupuncture & Karma Yoga Institute, Monroe TWP, NJ  
@@ -135,7 +135,7 @@ Build a multi-step intake flow launched from "Add Patient." Runs on a clinic dev
 
 > ✅ **1.1 completed 2026-06-28.** Route `/intake/:patientId` ships with all 5 screens and signature gates. Pain diagram uses interactive SVG. Demographics sync to patient record on completion. Entry points: PatientDetail header button + AddPatientDialog "Add & Start Intake →". Typed-name signatures (production will use HelloSign — Phase 2).
 
-### 1.2 Case Management + ICD-10 Western Diagnosis
+### 1.2 Case Management + ICD-10 Western Diagnosis ✅
 Leonid organizes all treatment around Cases (e.g., "Neck Pain 2026"). This is how claims are filed. AccuWorld must adopt this model.
 
 **Case data structure:**
@@ -167,6 +167,8 @@ Leonid organizes all treatment around Cases (e.g., "Neck Pain 2026"). This is ho
 - Free-text + manual code entry as fallback
 
 **Chart form update:** Add "ICD-10 Diagnosis" field at the top of the chart (pulls from the linked Case, editable). This is the Western diagnosis that goes on the claim.
+
+> ✅ **1.2 completed 2026-06-29.** `ICD10_CODES` (17 codes) and `CAUSE_OF_INJURY` constants in `seed.js`. `seedCases` (8 cases) with `caseId` on all 14 seed visits. `cases` state + `addCase`/`updateCase` in AppContext (persisted to `aw_cases`). `CaseDialog` component with ICD-10 picker and cause-of-injury warning. PatientDetail Cases card between Insurance and Treatment Plan. Visits chart form: case selector auto-fills Western Diagnosis from linked ICD-10. Demo walkthrough in Help drawer updated to 7 steps.
 
 ### 1.3 Attendance Sheet (Per-Visit Patient Sign-Off)
 Insurance auditors (especially Medicare) require a per-visit attendance record proving the patient was physically present. Leonid carries a paper sheet.
@@ -414,7 +416,7 @@ Get both policies before Phase 2 goes live. Do not wait until launch.
 | Phase | Status | What | Why It Matters |
 |-------|--------|------|----------------|
 | 0 | ✅ Done (2026-06-28) | Fix CPT codes, demographics, note state, terminology separation | Credibility for next practitioner meeting |
-| 1 | 🔄 In progress | Full intake form ✅, case management, ICD-10, attendance sheet | Complete the workflow; earn the commitment |
+| 1 | 🔄 In progress | Intake form ✅, case management + ICD-10 ✅, attendance sheet, demo walkthrough | Complete the workflow; earn the commitment |
 | 2 | ⏳ Not started | HIPAA backend, RLS, MFA, audit log, immutable notes, e-signature | Legal to hold real patient data |
 | 3 | ⏳ Not started | Real eligibility (Claim.MD), real claims (837P), Stripe, subscriptions | Revenue-generating product |
 
@@ -422,7 +424,7 @@ Get both policies before Phase 2 goes live. Do not wait until launch.
 
 ---
 
-*Document created: 2026-06-27 · Last updated: 2026-06-28*
+*Document created: 2026-06-27 · Last updated: 2026-06-29*
 
 ---
 

@@ -215,7 +215,7 @@ All backlog items have been implemented. No open backlog items remain.
 
 ---
 
-## Build Status (updated 2026-06-28 — Phase 1.1 patient intake form complete)
+## Build Status (updated 2026-06-29 — Phase 1.2 case management + ICD-10 complete)
 
 `npm run build` passes. Dev server: `npm run dev` → http://localhost:5173
 
@@ -274,6 +274,18 @@ All backlog items have been implemented. No open backlog items remain.
 | Schedule status color legend | Schedule page + Help drawer | Compact inline legend row added below the Schedule header (Confirmed/Requested/Completed/No-show with color swatches). Matching "Schedule Appointment Colors" section added to the Help drawer between Demo Walkthrough and Insurance Flag Colors. |
 | Chart page suggestion guide | Visit / Chart | Dismissible teal info strip at the top of the chart form explaining all suggestion buttons in plain English (no jargon). Dismissed per session via `useState`. |
 | AI Stop button + save-anytime note | Visit / Chart → SOAP Note | "Draft with AI" button replaced by a red "Stop" button while streaming (uses `AbortController` — keeps whatever was generated). A "AI is thinking — you can save at any time" note appears near the Save button whenever any AI call is in progress. |
+
+### Phase 1.2 — Case Management + ICD-10 Western Diagnosis (2026-06-29)
+
+| Task | Where | Notes |
+|------|-------|-------|
+| **ICD-10 curated list + CAUSE_OF_INJURY constants** | `seed.js` | `ICD10_CODES` (17 acupuncture-relevant codes). `CAUSE_OF_INJURY` + `CAUSE_OF_INJURY_LABELS` (none/car_at_fault/car_no_fault/work_injury/surgical). |
+| **seedCases** | `seed.js` | 8 seed cases — one per patient. Each has title, icd10Code+Label, dateOpened, status (active), insuranceId, causeOfInjury. All 14 seed visits (v1–v14) updated with `caseId`. |
+| **Cases state in AppContext** | `AppContext.jsx` | `cases` state (persisted to `aw_cases`). `addCase(c)` and `updateCase(id, changes)` callbacks. `resetToSeedData()` resets to `seedCases`. |
+| **CaseDialog component** | `src/components/cases/CaseDialog.jsx` | Create/edit case dialog. ICD-10 select from 17-code curated list + "Other / Manual entry" fallback (free-text in `code — label` format). Status (active/closed). Cause of injury with amber warning for non-None. Linked insurance select filtered to patient's profiles. |
+| **PatientDetail — Cases card** | `PatientDetail.jsx` | Cases card section between Insurance and Treatment Plan. Shows all cases for patient: title, ICD-10 code (monospace), status badge, visit count, linked payer. "New Case" button (Practitioner/Admin only) opens CaseDialog. Pencil icon on each case row opens edit dialog. |
+| **Visits — case selector** | `Visits.jsx` | Case selector row at top of chart form (above insurance banner). Shows patient's active cases. Selecting a case auto-fills `westernDiagnosis` from `icd10Code — icd10Label` (only when field is empty — does not overwrite existing text). `caseId` stored on every saved visit via `buildVisitData`. "Create a case →" link shown when patient has no cases. |
+| **Demo walkthrough updated** | `HelpDrawer.jsx` | 7-step walkthrough updated to include intake form (step 1), eligibility check (step 3), case review (step 4), case selector in chart (step 5), sign note (step 6), close invoice (step 7). Pages-at-a-glance updated for Patients and Visit/Chart. |
 
 ### Phase 1.1 — Digital patient intake form (2026-06-28)
 
@@ -370,3 +382,9 @@ Implemented based on feedback from Leonid Belenitsky, L.Ac. (Monroe Township NJ,
 - **intakeContent.js texts** — based on Leonid Belenitsky's actual paper intake packet (Monroe TWP NJ). Texts are realistic but not verbatim legal copies — production will require attorney review before use with real patients.
 - **Screen 2 has no signature gate** — Medical history is informational; the practitioner reviews it. Only screens 1, 3, 4, and 5 require signatures to advance.
 - **"Add & Start Intake →" in AddPatientDialog** — duplicates the insurance stub creation logic inline (can't call `handleSubmit` from a button outside the form). This is intentional: the button creates the patient + insurance shell, closes the dialog, and navigates to intake, bypassing form submission to avoid double-save.
+- **Cases are a separate entity from Treatment Plans** — both model the same underlying condition, but serve different purposes. Treatment Plans are clinical (goals, frequency, session count). Cases are billing/admin (ICD-10 code, linked insurance, cause of injury, claim-filing unit). They coexist in PatientDetail without merging.
+- **Case selector auto-fills westernDiagnosis only when empty** — `handleCaseChange()` in `Visits.jsx` checks `!form.westernDiagnosis.trim()` before writing. This prevents overwriting a diagnosis the practitioner already entered, and avoids overwriting when reopening a signed visit.
+- **ICD-10 manual entry format** — when "Other / Manual entry" is selected in CaseDialog, the practitioner types `CODE — Description` (e.g., `M54.31 — Sciatica, right side`). `handleSave()` splits on `—` to extract code and label separately.
+- **seedCases use offsetDate()** — `dateOpened` values derive from relative offsets matching the first visit of each patient's seed history, keeping timeline coherent for demo.
+- **cases persisted to `aw_cases`** — same localStorage pattern as all other entities. `resetToSeedData()` restores `seedCases`. `addCase` and `updateCase` both call `saveToStorage` inside the setter.
+- **Demo walkthrough updated to 7 steps** — `HelpDrawer.jsx` `DEMO_STEPS` updated to cover the full Phase 1 patient journey: add patient + intake → dashboard review → eligibility check → review case/ICD-10 → chart with case selector → sign note → close invoice.
